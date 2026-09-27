@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 
 from ..contracts import ApiResponse, Transaction
 from ..errors import ReplayError
-from .deps import get_state
+from .deps import get_state, require_admin_optional
 from .rate_limit import rate_limit_flow
 
 router = APIRouter(prefix="/api/v1", tags=["import"])
@@ -42,7 +42,11 @@ class ImportRequest(BaseModel):
     batch_size: Literal[1, 32, 64] = 32
 
 
-@router.post("/transactions/import", response_model=ApiResponse[dict], dependencies=[Depends(rate_limit_flow)])
+@router.post(
+    "/transactions/import",
+    response_model=ApiResponse[dict],
+    dependencies=[Depends(rate_limit_flow), Depends(require_admin_optional)],
+)
 async def import_transactions(request: Request, body: ImportRequest) -> ApiResponse[dict]:
     state = get_state(request)
     if state.replay is None:

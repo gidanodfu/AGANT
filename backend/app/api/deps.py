@@ -53,3 +53,23 @@ def require_admin(request: Request) -> None:
             status=401,
             severity=Severity.WARNING,
         )
+
+
+def require_admin_optional(request: Request) -> None:
+    """Exige ``X-Admin-Token`` sólo si ``AGANT_ADMIN_TOKEN`` está configurado.
+
+    En desarrollo (token vacío) los endpoints mutantes quedan abiertos para no
+    romper el panel; en despliegue, definir el token los protege sin cambiar el
+    código.
+    """
+    token = request.app.state.settings.admin_token
+    if not token:
+        return
+    provided = request.headers.get("X-Admin-Token")
+    if provided != token:
+        raise AGANTError(
+            "credencial administrativa inválida",
+            code=ErrorCode.VALIDATION_ERROR,
+            status=401,
+            severity=Severity.WARNING,
+        )

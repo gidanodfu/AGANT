@@ -69,6 +69,13 @@ rules/ML/grafo), de modo que el evento realtime es autosuficiente. El campo
 Si no hay token configurado, los endpoints administrativos responden `403`
 y **no** se exponen.
 
+Los endpoints **mutantes** (`/flow/start`, `/flow/stop`,
+`/transactions/import`, `/laya/load`, `/laya/test`) exigen el token **sólo si**
+`AGANT_ADMIN_TOKEN` está definido; con el token vacío quedan abiertos para no
+romper el panel en desarrollo. El panel no envía el token: en despliegue,
+protege estos endpoints con un proxy de autenticación o usa la API con la
+cabecera.
+
 ## Seguridad
 
 Validación de entrada, límite de lote (1000), CORS explícito, validación de

@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Endpoints de flujo controlados por la interfaz (no administrativos).
+"""Endpoints de flujo controlados por la interfaz.
 
-Permiten iniciar/detener un flujo Live (sintético, ``source=live``) o un
-replay de PaySim (``source=replay``). No requieren token: son la entrada
-interactiva del panel. Los endpoints administrativos ``/replay/*`` siguen
-protegidos.
+Permiten iniciar/detener un flujo Live (sintético, ``source=live_synthetic``) o
+un replay de PaySim (``source=replay``). Si ``AGANT_ADMIN_TOKEN`` está
+configurado, exigen ``X-Admin-Token``; con token vacío quedan abiertos para no
+romper el panel en desarrollo.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from ..contracts import ApiResponse
 from ..errors import ReplayError
-from .deps import get_state
+from .deps import get_state, require_admin_optional
 from .rate_limit import rate_limit_flow
 
 router = APIRouter(prefix="/api/v1/flow", tags=["flow"])
@@ -62,7 +62,11 @@ def _request_id(request: Request) -> str:
     return getattr(request.state, "request_id", "-")
 
 
-@router.post("/start", response_model=ApiResponse[dict], dependencies=[Depends(rate_limit_flow)])
+@router.post(
+    "/start",
+    response_model=ApiResponse[dict],
+    dependencies=[Depends(rate_limit_flow), Depends(require_admin_optional)],
+)
 async def start(request: Request, body: FlowRequest) -> ApiResponse[dict]:
     state = get_state(request)
     if state.replay is None:
@@ -82,7 +86,9 @@ async def start(request: Request, body: FlowRequest) -> ApiResponse[dict]:
     return ApiResponse.ok(data, request_id=_request_id(request))
 
 
-@router.post("/stop", response_model=ApiResponse[dict])
+@router.post(
+    "/stop", response_model=ApiResponse[dict], dependencies=[Depends(require_admin_optional)]
+)
 async def stop(request: Request) -> ApiResponse[dict]:
     state = get_state(request)
     if state.replay is None:

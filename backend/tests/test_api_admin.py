@@ -63,3 +63,29 @@ def test_replay_status_is_public(tmp_path):
         response = client.get("/api/v1/replay/status")
     assert response.status_code == 200
     assert response.json()["data"]["state"] == "idle"
+
+
+def test_mutating_endpoints_protected_when_token_set(tmp_path):
+    app = create_app(_settings(tmp_path, "secreto"))
+    with TestClient(app, raise_server_exceptions=False) as client:
+        missing = client.post("/api/v1/flow/start", json={"source": "live", "count": 5})
+        wrong = client.post(
+            "/api/v1/flow/start",
+            json={"source": "live", "count": 5},
+            headers={"X-Admin-Token": "nope"},
+        )
+        correct = client.post(
+            "/api/v1/flow/start",
+            json={"source": "live", "count": 5},
+            headers={"X-Admin-Token": "secreto"},
+        )
+    assert missing.status_code == 401
+    assert wrong.status_code == 401
+    assert correct.status_code == 200
+
+
+def test_mutating_endpoints_open_without_token(tmp_path):
+    app = create_app(_settings(tmp_path, None))
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.post("/api/v1/flow/start", json={"source": "live", "count": 5})
+    assert response.status_code == 200

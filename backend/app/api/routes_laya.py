@@ -29,7 +29,7 @@ from ..contracts import ApiResponse, Decision, Evidence, GraphContext, Source, T
 from ..decision.laya_engine import LayaDecisionEngine, resolve_laya_engine
 from ..decision.state_builder import DecisionStateBuilder
 from ..features.feature_builder import FeatureBuilder
-from .deps import get_state
+from .deps import get_state, require_admin_optional
 from .rate_limit import rate_limit_flow
 
 router = APIRouter(prefix="/api/v1/laya", tags=["laya"])
@@ -72,7 +72,11 @@ class LayaLoadRequest(BaseModel):
     warmup: bool = True
 
 
-@router.post("/load", response_model=ApiResponse[dict], dependencies=[Depends(rate_limit_flow)])
+@router.post(
+    "/load",
+    response_model=ApiResponse[dict],
+    dependencies=[Depends(rate_limit_flow), Depends(require_admin_optional)],
+)
 async def load(request: Request, body: LayaLoadRequest) -> ApiResponse[dict]:
     state = get_state(request)
     settings = state.settings
@@ -103,7 +107,7 @@ class LayaTestRequest(BaseModel):
     transaction: Transaction | None = None
 
 
-@router.post("/test", response_model=ApiResponse[dict])
+@router.post("/test", response_model=ApiResponse[dict], dependencies=[Depends(require_admin_optional)])
 async def test(request: Request, body: LayaTestRequest | None = None) -> ApiResponse[dict]:
     state = get_state(request)
     laya = state.laya
