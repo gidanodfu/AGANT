@@ -100,4 +100,4 @@ def test_flow_endpoint_exposes_batch_mode(tmp_path: Path):
                 break
             time.sleep(0.05)
     assert status["processed"] == 64
-    assert status["source"] == "live"
+    assert status["source"] == "live_synthetic"

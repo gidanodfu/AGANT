@@ -90,6 +90,19 @@ def test_laya_latency_only_counts_invocations():
     assert stats["total_ms"]["count"] == 2
 
 
+def test_live_synthetic_is_separate_from_live():
+    metrics = MetricsCollector()
+    metrics.record_decision(_result(Source.LIVE, Decision.LEGITIMATE))
+    metrics.record_decision(_result(Source.LIVE_SYNTHETIC, Decision.FRAUD))
+    assert metrics.snapshot(Source.LIVE).processed == 1
+    assert metrics.snapshot(Source.LIVE).fraud == 0
+    assert metrics.snapshot(Source.LIVE_SYNTHETIC).processed == 1
+    assert metrics.snapshot(Source.LIVE_SYNTHETIC).fraud == 1
+    payload = metrics.snapshot_payload()
+    assert set(payload["snapshots"]) == {"live", "live_synthetic", "replay"}
+    assert "live_synthetic" in payload["stages"]
+
+
 def test_snapshot_payload_shape_is_single_source_of_truth():
     metrics = MetricsCollector()
     metrics.record_decision(_result(Source.LIVE, Decision.LEGITIMATE))

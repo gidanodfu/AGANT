@@ -149,8 +149,10 @@ class ReplayController:
     def _launch(self, engine) -> dict:
         if self.running():
             raise ReplayError("ya hay un flujo en curso")
-        if engine.source is Source.REPLAY:
-            self.state.metrics.reset_source(Source.REPLAY)
+        # Los flujos (replay/live sintético) parten de métricas limpias; el
+        # tráfico live real (API/import) conserva su acumulado.
+        if engine.source is not Source.LIVE:
+            self.state.metrics.reset_source(engine.source)
         self.engine = engine
         self._task = asyncio.create_task(engine.run())
         return self.status()

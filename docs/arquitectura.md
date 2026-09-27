@@ -23,7 +23,7 @@ FeatureBuilder (9 tabulares + 6 de grafo causales)
    Decisión + Explicación
             │
    EventBus → WebSocket / SSE → Frontend
-            └── MetricsCollector (live/replay separados)
+            └── MetricsCollector (live/live_synthetic/replay separados)
 ```
 
 ## Capas (`backend/app/`)

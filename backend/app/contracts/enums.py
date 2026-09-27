@@ -30,6 +30,7 @@ class Decision(str, Enum):
 
 class Source(str, Enum):
     LIVE = "live"
+    LIVE_SYNTHETIC = "live_synthetic"
     REPLAY = "replay"
 
 

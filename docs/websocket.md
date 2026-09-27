@@ -79,7 +79,9 @@ recuperan (se documenta, no se oculta).
 deduplica sólo por `transaction_id`: usa `event_id` (+ `sequence`).
 
 `source` nunca se falsifica: `live` sólo desde la API online;
-`replay` desde el motor de replay.
+`live_synthetic` desde el flujo Live sintético de la UI; `replay` desde el
+motor de replay. Gracias a ello, las métricas y el drift de `live` **no** se
+contaminan con tráfico sintético.
 
 ## Backpressure
 

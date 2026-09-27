@@ -165,7 +165,7 @@ def test_flow_live_all_is_rejected(tmp_path):
     assert response.json()["error"]["code"] == "REPLAY_ERROR"
 
 
-def test_flow_live_generates_live_source(tmp_path):
+def test_flow_live_generates_synthetic_source(tmp_path):
     app = create_app(_settings(tmp_path))
     with TestClient(app) as client:
         client.post(
@@ -174,11 +174,11 @@ def test_flow_live_generates_live_source(tmp_path):
         )
         status = _wait_status(client)
     assert status["state"] in ("finished", "stopped")
-    assert status["source"] == "live"
+    assert status["source"] == "live_synthetic"
     assert status["processed"] == 50
 
     transactions = app.state.services.store.recent_transactions(50, None)
-    assert transactions and all(tx["source"] == "live" for tx in transactions)
+    assert transactions and all(tx["source"] == "live_synthetic" for tx in transactions)
 
 
 def test_flow_stop_preserves_stats(tmp_path):

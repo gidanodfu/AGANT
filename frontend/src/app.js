@@ -130,7 +130,7 @@ function matchesDecisionPayload(payload, filters) {
 function matchesTransactionPayload(payload, filters, state) {
   if (!payload) return false;
   let decision = null;
-  for (const source of ["live", "replay"]) {
+  for (const source of ["live", "live_synthetic", "replay"]) {
     const found = state.decisionByKey.get(`${source}:${payload.transaction_id}`);
     if (found) {
       decision = found;

@@ -28,7 +28,7 @@ Error:
 | GET | `/api/v1/transactions` | Transacciones recientes (`limit`, `source`) |
 | GET | `/api/v1/decisions` | Decisiones recientes (`limit`, `source`) |
 | GET | `/api/v1/laya-decisions` | Decisiones con `laya.invoked=true` |
-| GET | `/api/v1/metrics` | Snapshots live/replay, etapas y EventBus |
+| GET | `/api/v1/metrics` | Snapshots live/live_synthetic/replay, etapas y EventBus |
 | GET | `/api/v1/metrics/stream` | SSE `metrics.updated` |
 | GET | `/api/v1/drift` | Drift de features/etiqueta (offline) |
 | GET | `/api/v1/graph` | Contexto de grafo acotado |

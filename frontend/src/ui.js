@@ -54,9 +54,15 @@ export function decisionBadge(decision) {
   return `<span class="badge ${meta.cls}"><span class="dot ${meta.dot}"></span>${escapeHtml(meta.label)}</span>`;
 }
 
+const SOURCE_LABELS = {
+  live: { cls: "badge-info", label: "Live" },
+  live_synthetic: { cls: "badge-neutral", label: "Live sintético" },
+  replay: { cls: "badge-neutral", label: "Replay" },
+};
+
 export function sourceBadge(source) {
-  const live = source === "live";
-  return `<span class="badge ${live ? "badge-info" : "badge-neutral"}">${live ? "Live" : "Replay"}</span>`;
+  const meta = SOURCE_LABELS[source] || { cls: "badge-neutral", label: source || "—" };
+  return `<span class="badge ${meta.cls}">${escapeHtml(meta.label)}</span>`;
 }
 
 export function statusDot(status) {

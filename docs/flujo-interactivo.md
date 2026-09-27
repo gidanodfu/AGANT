@@ -71,10 +71,12 @@ mismas decisiones (paridad verificada). El panel está disponible en
 
 | Fuente | Semántica | Origen de datos |
 |---|---|---|
-| Live | `source="live"` | transacciones sintéticas generadas server-side |
+| Live | `source="live_synthetic"` | transacciones sintéticas generadas server-side |
 | PaySim Replay | `source="replay"` | dataset PaySim, orden temporal |
 
-Replay **nunca** se etiqueta como live. Live **no** usa PaySim.
+Replay **nunca** se etiqueta como live. El flujo Live es **sintético**
+(`live_synthetic`) y no contamina las métricas ni el drift del live real
+(`source="live"`, API/import). Live **no** usa PaySim.
 
 - **Modo Laya**: `disabled` no usa Laya; `pretrained` reutiliza el motor ya
   cargado; `custom` exige `AGANT_LAYA_CUSTOM_SUBFOLDER` (si falta, error

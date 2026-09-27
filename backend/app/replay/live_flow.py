@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Flujo Live: transacciones sintéticas server-side con ``source="live"``.
+"""Flujo Live: transacciones sintéticas server-side con ``source="live_synthetic"``.
 
 No usa PaySim. Soporta modo per-item y **por lotes** (alto rendimiento).
 """
@@ -51,7 +51,7 @@ _MERCHANT_TYPES = {TransactionType.PAYMENT, TransactionType.DEBIT}
 
 
 class LiveFlowEngine:
-    source = Source.LIVE
+    source = Source.LIVE_SYNTHETIC
     kind = "flow"
 
     def __init__(
@@ -128,7 +128,7 @@ class LiveFlowEngine:
                 results = await asyncio.to_thread(self._decide_block, transactions)
                 for offset, (transaction, result) in enumerate(zip(transactions, results)):
                     publish = self._should_publish(result, index + offset)
-                    self.service.record(result, transaction, Source.LIVE, publish=publish)
+                    self.service.record(result, transaction, Source.LIVE_SYNTHETIC, publish=publish)
                     self.stats.note(result)
                 index += size
                 self.processed = index
@@ -143,7 +143,7 @@ class LiveFlowEngine:
             self.finished = True
             errors = getattr(self.state, "errors", None)
             if errors is not None:
-                errors.log(exc, source=Source.LIVE.value, operation="live-flow")
+                errors.log(exc, source=Source.LIVE_SYNTHETIC.value, operation="live-flow")
             else:
                 logger.error("live flow falló: %s", exc)
             self._emit_status("error")
@@ -170,9 +170,9 @@ class LiveFlowEngine:
 
     def _decide_block(self, transactions: list[Transaction]) -> list:
         if self.batch is not None:
-            return self.batch.decide_block(transactions, Source.LIVE, correlation_id="live-flow")
+            return self.batch.decide_block(transactions, Source.LIVE_SYNTHETIC, correlation_id="live-flow")
         return [
-            self.service.engine.decide(transaction, source=Source.LIVE, correlation_id="live-flow")
+            self.service.engine.decide(transaction, source=Source.LIVE_SYNTHETIC, correlation_id="live-flow")
             for transaction in transactions
         ]
 

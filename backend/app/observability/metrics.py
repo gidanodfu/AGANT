@@ -58,7 +58,11 @@ class _Bucket:
 
 class MetricsCollector:
     def __init__(self) -> None:
-        self._buckets = {Source.LIVE.value: _Bucket(), Source.REPLAY.value: _Bucket()}
+        self._buckets = {
+            Source.LIVE.value: _Bucket(),
+            Source.LIVE_SYNTHETIC.value: _Bucket(),
+            Source.REPLAY.value: _Bucket(),
+        }
         self.error_counts: Counter[str] = Counter()
         self._stats_cache: dict[str, tuple[float, dict]] = {}
 
@@ -107,7 +111,7 @@ class MetricsCollector:
     def snapshot(self, source: Source, *, bus_stats: dict | None = None, ws_clients: int = 0) -> MetricSnapshot:
         bucket = self._buckets[source.value]
         elapsed = max(1e-6, time.perf_counter() - bucket.started_at)
-        errors = sum(v for k, v in self.error_counts.items() if k.startswith(source.value))
+        errors = sum(v for k, v in self.error_counts.items() if k.startswith(f"{source.value}:"))
         return MetricSnapshot(
             source=source.value,
             processed=bucket.processed,
@@ -128,7 +132,7 @@ class MetricsCollector:
     def all_snapshots(self, *, bus_stats: dict | None = None, ws_clients: int = 0) -> dict[str, dict]:
         return {
             source.value: self.snapshot(source, bus_stats=bus_stats, ws_clients=ws_clients).model_dump(mode="json")
-            for source in (Source.LIVE, Source.REPLAY)
+            for source in (Source.LIVE, Source.LIVE_SYNTHETIC, Source.REPLAY)
         }
 
     def snapshot_payload(self, *, bus_stats: dict | None = None, ws_clients: int = 0) -> dict:
@@ -137,6 +141,7 @@ class MetricsCollector:
             "snapshots": self.all_snapshots(bus_stats=bus_stats, ws_clients=ws_clients),
             "stages": {
                 "live": self.stage_stats(Source.LIVE),
+                "live_synthetic": self.stage_stats(Source.LIVE_SYNTHETIC),
                 "replay": self.stage_stats(Source.REPLAY),
             },
             "event_bus": bus_stats or {},

@@ -102,7 +102,9 @@ def test_live_flow_respects_publish_false(tmp_path: Path):
     asyncio.run(engine.run())
     assert engine.processed == 20
     assert state.bus.events_published == 0
-    assert state.metrics.snapshot(Source.LIVE).processed == 20
+    # El flujo sintético no contamina las métricas del live real.
+    assert state.metrics.snapshot(Source.LIVE_SYNTHETIC).processed == 20
+    assert state.metrics.snapshot(Source.LIVE).processed == 0
 
 
 def test_live_flow_surfaces_error(tmp_path: Path):
