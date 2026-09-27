@@ -54,7 +54,7 @@ def main() -> int:
     settings = get_settings()
     state = SimpleNamespace(
         settings=settings,
-        bus=EventBus(settings.max_events),
+        bus=EventBus(subscriber_queue=settings.max_events),
         metrics=MetricsCollector(),
         store=Store(),
         laya=LayaDecisionEngine(settings),

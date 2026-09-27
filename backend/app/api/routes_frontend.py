@@ -30,8 +30,6 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-_PAGES = ("/", "/home", "/transacciones", "/decisiones")
-
 
 def mount_frontend(app: FastAPI, frontend: Path) -> bool:
     index = frontend / "index.html"

@@ -87,7 +87,7 @@ def _build_state(settings: Settings) -> AppState:
     return AppState(
         settings=settings,
         errors=errors,
-        bus=EventBus(settings.max_events),
+        bus=EventBus(subscriber_queue=settings.max_events),
         metrics=metrics,
         store=Store(),
         decision_engine=engine,

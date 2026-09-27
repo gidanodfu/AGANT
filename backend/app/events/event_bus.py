@@ -32,8 +32,7 @@ from ..contracts.events import Event
 
 
 class EventBus:
-    def __init__(self, max_queue: int = 1000, subscriber_queue: int = 2000) -> None:
-        self.max_queue = max_queue
+    def __init__(self, subscriber_queue: int = 2000) -> None:
         self.subscriber_queue = subscriber_queue
         self._subscribers: set[asyncio.Queue] = set()
         self._drops_by_subscriber: dict[asyncio.Queue, int] = {}
