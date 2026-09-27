@@ -139,10 +139,20 @@ p99 3.48 ms**, ML p50 1.98 ms. Detalle en `docs/rendimiento.md`.
 ```
 
 Compara las features de grafo online (`GraphState` con caps LRU) contra los
-memmaps offline y reporta divergencia y cardinalidad real. En PaySim completo
-los caps (2M/2M) son menores que las cuentas/aristas reales
-(6.35M/2.72M/6.36M), por lo que la paridad se rompe a gran escala. Ver
-`docs/baseline.md`.
+memmaps offline. Desde `online_v2` **ambas se calculan con el mismo
+`GraphState`**, así que la divergencia es **0** (paridad por construcción). Los
+caps (2M/2M) acotan la historia del contexto; ver `docs/limitaciones.md`.
+
+## Limitaciones
+
+Resumen honesto de lo que AGANT no garantiza (detalle en
+`docs/limitaciones.md`):
+
+- Las **reglas solas son casi inútiles** (F1 ≈ 0.011); el ML hace el trabajo.
+- El **grafo no mejora** el F1 bajo paridad (−0.0117) y su historia está
+  acotada por los caps LRU.
+- El modelo (GBM) y Laya **no están calibrados**; no hay estado `REVIEW`.
+- Tiempo real y rate-limit son **de un proceso**, sin respaldo distribuido.
 
 ## Docker
 
@@ -165,3 +175,4 @@ docker compose --profile gpu up        # + servicio Laya aislado
 | 7 | Tests, benchmarks, Docker, docs | ✅ |
 | 8 | Flujo interactivo (`/nueva-transaccion`, Live/Replay) | ✅ |
 | 9 | Estabilización: red de seguridad, fixes aditivos, licencia canónica | ✅ |
+| 10 | Modelo GBM + selección, baselines e intervalos de confianza | ✅ |
