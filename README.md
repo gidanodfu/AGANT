@@ -54,12 +54,13 @@ cp .env.example .env             # ajustar según necesidad
 ```
 
 Variantes: `audit_only` (post-transacción, F1 0.8761, no online) y ablación
-(grafo aporta +0.0115 F1). **Modo por lotes**: `batch_size` 32/64 con ML
+con features de grafo **acotadas igual que online** (la variante con grafo no
+mejora F1: −0.0117). **Modo por lotes**: `batch_size` 32/64 con ML
 vectorizado → ~3,400 tx/s vs ~344 tx/s per-item (mismas decisiones). Ver
 `docs/rendimiento.md`.
 
-Métricas TEST reproducidas: **P 0.9567 · R 0.7228 · F1 0.8235 ·
-ROC-AUC 0.9920 · PR-AUC 0.8545**.
+Métricas TEST reproducidas (features `online_v2`): **P 0.9290 · R 0.7212 ·
+F1 0.8121 · ROC-AUC 0.9883 · PR-AUC 0.8425**.
 
 ## Ejecutar
 

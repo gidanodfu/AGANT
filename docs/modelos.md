@@ -16,12 +16,12 @@ tabulares + 6 de grafo.
 
 | P | R | F1 | ROC-AUC | PR-AUC | TN | FP | FN | TP |
 |---|---|---|---|---|---|---|---|---|
-| 0.9567 | 0.7228 | 0.8235 | 0.9920 | 0.8545 | 88,173 | 41 | 347 | 905 |
+| 0.9290 | 0.7212 | 0.8121 | 0.9883 | 0.8425 | 88,145 | 69 | 349 | 903 |
 
-VALIDATION: P 0.9217 · R 0.7280 · F1 0.8134. Ambas reproducen el benchmark
+VALIDATION: P 0.8731 · R 0.7288 · F1 0.7945. Ambas reproducen el benchmark
 de referencia del proyecto (no son garantía de producción).
 
-### Features (`online_v1`)
+### Features (`online_v2`)
 
 `step, amount, origin_old_balance, destination_old_balance, type_CASH_IN,
 type_CASH_OUT, type_DEBIT, type_PAYMENT, type_TRANSFER` +
@@ -29,13 +29,22 @@ type_CASH_OUT, type_DEBIT, type_PAYMENT, type_TRANSFER` +
 origin_unique_destinations_before, destination_unique_origins_before,
 edge_count_before, edge_seen_before`.
 
+Las 6 features de grafo se calculan offline con el **mismo `GraphState`** que
+la ruta online (mismos caps LRU), de modo que entrenamiento y servicio usan
+la misma definición de contexto (paridad por construcción). La versión
+anterior (`online_v1`) usaba ventanas SQL sin acotar y divergía del servicio
+a gran escala.
+
 ## Selección de umbral y ablación
 
 - **Umbral**: barrido sobre VALIDATION (`scripts/thresholds.py`) → mejor F1 en
-  **0.5** (`results/metrics/threshold_analysis.json`).
-- **Ablación** (`scripts/evaluate_variants.py`, RF de 15 árboles sobre 2M filas):
-  F1 sin grafo **0.7949** vs con grafo **0.8065** → las 6 features de grafo
-  aportan **+0.0115 F1** (`results/metrics/ablation.json`).
+  **0.55** (`results/metrics/threshold_analysis.json`); el artefacto conserva
+  0.5.
+- **Ablación** (`scripts/evaluate_variants.py`, RF de 15 árboles sobre 2M filas,
+  features `online_v2`): F1 sin grafo **0.7949** vs con grafo **0.7833** →
+  las 6 features de grafo **no mejoran** F1 bajo paridad (**−0.0117**)
+  (`results/metrics/ablation.json`). Con las features `online_v1` (sin acotar)
+  la lectura era +0.0115; el signo cambia al hacer consistente offline/online.
 - **Registro de experimentos**: `results/experiments/index.json` guarda
   dataset/split/umbral/feature_version/model_version/métricas.
 
