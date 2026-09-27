@@ -87,6 +87,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
     allowed_ws_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
     admin_token: str | None = None
+    health_strict: bool = False
     rate_limit_decision_per_min: int = 600
     rate_limit_flow_per_min: int = 300
     api_url: str = "http://localhost:8000"

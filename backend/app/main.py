@@ -204,11 +204,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/health", response_model=ApiResponse[dict])
     async def health(request: Request) -> ApiResponse[dict]:
         report = request.app.state.services.startup_report
+        degraded = [component.name for component in report.degraded] if report is not None else []
+        # En modo estricto, cualquier componente degradado (p. ej. modelo o
+        # dataset ausente) marca el servicio como degradado; por defecto se
+        # mantiene el comportamiento previo (solo componentes requeridos).
+        ready = report is None or (report.ready and (not settings.health_strict or not degraded))
         return ApiResponse.ok(
             {
-                "status": "ready" if report is None or report.ready else "degraded",
+                "status": "ready" if ready else "degraded",
                 "version": __version__,
                 "env": settings.env,
+                "degraded_components": degraded,
             },
             request_id=_request_id(request),
         )
