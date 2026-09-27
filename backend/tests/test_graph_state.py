@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
 import numpy as np
@@ -86,3 +87,43 @@ def test_offline_online_parity(tmp_path: Path):
         assert online == offline, f"fila {i}: online={online} offline={offline}"
         step = int(row.split(",")[0])
         state.observe(origin, dest, step)
+
+
+def _synth_rows(n: int, seed: int = 0, per_step: int = 100) -> list[str]:
+    rng = random.Random(seed)
+    rows = []
+    for i in range(n):
+        step = 1 + i // per_step
+        origin = f"C{rng.randint(1, 500)}"
+        dest = f"M{rng.randint(1, 200)}"
+        amount = round(rng.uniform(1.0, 1000.0), 2)
+        rows.append(f"{step},TRANSFER,{amount},{origin},{amount},0,{dest},0,0,0,0")
+    return rows
+
+
+def test_offline_online_parity_large(tmp_path: Path):
+    settings = Settings(data_dir=str(tmp_path / "data"), results_dir=str(tmp_path / "res"))
+    rows = _synth_rows(20_000)
+    csv = settings.raw_data_path / "paysim.csv"
+    csv.parent.mkdir(parents=True, exist_ok=True)
+    csv.write_text(HEADER + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
+
+    build_database(settings, force=True)
+    features = build_features(settings, force=True).load_features()
+
+    state = GraphState(max_accounts=1_000_000, max_edges=1_000_000)
+    graph_columns = range(9, 15)
+    for i, row in enumerate(rows):
+        step, _, _, origin, _, _, dest, _, _, _, _ = row.split(",")
+        context = state.context(origin, dest, int(step))
+        online = [
+            context.origin_degree_before,
+            context.destination_degree_before,
+            context.origin_unique_destinations_before,
+            context.destination_unique_origins_before,
+            context.edge_count_before,
+            context.edge_seen_before,
+        ]
+        offline = [float(features[i][c]) for c in graph_columns]
+        assert online == offline, f"fila {i}: online={online} offline={offline}"
+        state.observe(origin, dest, int(step))

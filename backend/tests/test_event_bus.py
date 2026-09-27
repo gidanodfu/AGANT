@@ -58,3 +58,14 @@ def test_unsubscribe_stops_delivery():
     bus.unsubscribe(queue)
     bus.publish(_event(bus))
     assert bus.subscribers == 0
+
+
+def test_drops_accumulate_across_subscribers():
+    bus = EventBus(subscriber_queue=2)
+    q1 = bus.subscribe()
+    q2 = bus.subscribe()
+    for i in range(5):
+        bus.publish(_event(bus, f"T{i}"))
+    assert q1.qsize() == 2 and q2.qsize() == 2
+    # contador global: 3 descartes por cada suscriptor
+    assert bus.events_dropped == 6
