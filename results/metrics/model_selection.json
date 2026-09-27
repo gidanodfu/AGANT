@@ -1,0 +1,110 @@
+{
+  "dataset": "paysim",
+  "feature_version": "online_v2",
+  "candidates": {
+    "rf": {
+      "kind": "rf",
+      "params": {
+        "n_estimators": 20,
+        "max_depth": 20,
+        "min_samples_leaf": 2,
+        "max_features": "sqrt",
+        "class_weight": "balanced_subsample",
+        "random_state": 42,
+        "n_jobs": -1
+      },
+      "train_seconds": 56.85042095184326,
+      "threshold": 0.5994,
+      "validation": {
+        "threshold": 0.5994,
+        "precision": 0.9111592632719393,
+        "recall": 0.7127118644067797,
+        "f1": 0.7998097955301949,
+        "roc_auc": 0.9894235867728319,
+        "pr_auc": 0.7942435159455539,
+        "tn": 189885,
+        "fp": 82,
+        "fn": 339,
+        "tp": 841,
+        "rows": 191147,
+        "fraud": 1180
+      },
+      "test": {
+        "threshold": 0.5994,
+        "precision": 0.9545945945945946,
+        "recall": 0.7052715654952076,
+        "f1": 0.8112080845199816,
+        "roc_auc": 0.988265357603,
+        "pr_auc": 0.8424632360882922,
+        "tn": 88172,
+        "fp": 42,
+        "fn": 369,
+        "tp": 883,
+        "rows": 89466,
+        "fraud": 1252
+      },
+      "latency_ms": {
+        "p50": 1.570627000546665,
+        "p95": 2.56407499909983,
+        "p99": 3.127276000668644,
+        "count": 2000
+      }
+    },
+    "gbm": {
+      "kind": "gbm",
+      "params": {
+        "max_iter": 200,
+        "learning_rate": 0.1,
+        "class_weight": "balanced",
+        "random_state": 42
+      },
+      "train_seconds": 60.18881058692932,
+      "threshold": 0.989,
+      "validation": {
+        "threshold": 0.989,
+        "precision": 0.7487179487179487,
+        "recall": 0.8661016949152542,
+        "f1": 0.8031434184675835,
+        "roc_auc": 0.9990160423045822,
+        "pr_auc": 0.9153129670217761,
+        "tn": 189624,
+        "fp": 343,
+        "fn": 158,
+        "tp": 1022,
+        "rows": 191147,
+        "fraud": 1180
+      },
+      "test": {
+        "threshold": 0.989,
+        "precision": 0.839622641509434,
+        "recall": 0.853035143769968,
+        "f1": 0.8462757527733756,
+        "roc_auc": 0.9988268571903745,
+        "pr_auc": 0.9431523830223771,
+        "tn": 88010,
+        "fp": 204,
+        "fn": 184,
+        "tp": 1068,
+        "rows": 89466,
+        "fraud": 1252
+      },
+      "latency_ms": {
+        "p50": 1.885636000224622,
+        "p95": 2.860849999706261,
+        "p99": 3.304804000435979,
+        "count": 2000
+      }
+    }
+  },
+  "decision": {
+    "winner": "gbm",
+    "metric": "f1",
+    "rf_test": 0.8112080845199816,
+    "gbm_test": 0.8462757527733756,
+    "rf_p95_ms": 2.56407499909983,
+    "gbm_p95_ms": 2.860849999706261,
+    "quality_win": true,
+    "latency_ok": true,
+    "latency_ratio": 1.5
+  }
+}

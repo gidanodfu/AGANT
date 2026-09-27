@@ -10,14 +10,14 @@ ruta crítica (RTX 4060 Laptop / 8 cores):
 
 | Etapa | p50 | p95 | p99 |
 |---|---|---|---|
-| features | 0.017 | 0.026 | 0.042 |
-| graph | 0.016 | 0.026 | 0.046 |
-| rules | 0.012 | 0.019 | 0.039 |
-| ML | 1.559 | 2.169 | 2.701 |
-| state | 0.009 | 0.015 | 0.032 |
-| **total** | **1.65** | **2.28** | **2.86** |
+| features | 0.023 | 0.034 | 0.055 |
+| graph | 0.021 | 0.033 | 0.055 |
+| rules | 0.013 | 0.022 | 0.045 |
+| ML | 1.975 | 2.926 | 3.287 |
+| state | 0.012 | 0.020 | 0.037 |
+| **total** | **2.10** | **3.09** | **3.48** |
 
-Throughput de la ruta de decisión: ~560 items/s en streaming por ítem.
+Throughput de la ruta de decisión: ~443 items/s en streaming por ítem.
 
 > Estas cifras son de un batch offline **sin red**. No son garantía de
 > producción; el objetivo de 100k tps es una propiedad de arquitectura
@@ -26,25 +26,25 @@ Throughput de la ruta de decisión: ~560 items/s en streaming por ítem.
 ## Hallazgo de optimización
 
 Con `n_jobs=-1` en inferencia, `predict_proba` de una fila costaba ~16 ms
-(overhead de hilos). Con `n_jobs=1` baja a ~1.6 ms. El paralelismo se
-explotaría por lote, no por petición. Corrección: una línea en
-`MLDecisionProvider.load`.
+(overhead de hilos). Con `n_jobs=1` baja a ~2 ms con el GBM servido (~1.6 ms
+con el RF anterior). El paralelismo se explotaría por lote, no por petición.
+Corrección: una línea en `MLDecisionProvider.load`.
 
 ## Procesamiento por lotes (alto rendimiento)
 
 Modo con ML **vectorizado**: las features causales/reglas/grafo se calculan por
 ítem y la inferencia ML se agrupa en lotes de `batch_size` (32/64). Mismas
-decisiones que el camino per-item (paridad verificada por test).
+decisiones que el camino per-item (paridad verificada por test y por conteos).
 
-Replay de 20,000 filas de PaySim (RTX 4060 Laptop, sin Laya), medido real:
+Replay de 20,000 filas de PaySim (RTX 4060 Laptop, sin Laya, modelo GBM), medido real:
 
 | Config | tps | p50 | p95 | p99 |
 |---|---|---|---|---|
-| batch 1 (per-item) | 344 | 2.48 ms | 3.94 ms | 5.02 ms |
-| batch 32 | 2,981 | 0.12 ms | 0.19 ms | 0.27 ms |
-| batch 64 | 3,445 | 0.07 ms | 0.13 ms | 0.26 ms |
+| batch 1 (per-item) | 435 | 2.00 ms | 2.98 ms | 3.61 ms |
+| batch 32 | 4,086 | 0.08 ms | 0.13 ms | 0.19 ms |
+| batch 64 | 4,701 | 0.05 ms | 0.10 ms | 0.15 ms |
 
-Ganancia ≈ **8.7×–10×**. Los 100k tx/s del benchmark son solo de inferencia ML
+Ganancia ≈ **9.4×–10.8×**. Los 100k tx/s del benchmark son solo de inferencia ML
 aislada; el pipeline completo (features+reglas+grafo+objetos+eventos) da el
 número aquí reportado. La publicación de eventos es **muestreada** por defecto
 (FRAUD/SUSPICIOUS/Laya + 1 de cada K) para no saturar el WebSocket; las métricas

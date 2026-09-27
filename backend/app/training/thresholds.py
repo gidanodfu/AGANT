@@ -24,11 +24,14 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 
 from .metrics import binary_metrics
 
+# Rejilla fina hacia umbrales altos (pesos balanceados concentran scores ~1).
+DEFAULT_THRESHOLDS: list[float] = [round(float(x), 4) for x in np.linspace(0.05, 0.999, 96)]
+
 
 def sweep_thresholds(
     y_true: np.ndarray, y_score: np.ndarray, thresholds: list[float] | None = None
 ) -> list[dict]:
-    thresholds = thresholds or [round(value / 100, 2) for value in range(5, 96, 5)]
+    thresholds = thresholds or DEFAULT_THRESHOLDS
     y_true = np.asarray(y_true).astype(np.int8)
     y_score = np.asarray(y_score, dtype=np.float64)
     rows = []
@@ -45,8 +48,13 @@ def sweep_thresholds(
     return rows
 
 
-def select_threshold(y_true: np.ndarray, y_score: np.ndarray, metric: str = "f1") -> dict:
+def select_threshold(
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    metric: str = "f1",
+    thresholds: list[float] | None = None,
+) -> dict:
     """Devuelve el umbral que maximiza ``metric`` en la rejilla evaluada."""
-    rows = sweep_thresholds(y_true, y_score)
+    rows = sweep_thresholds(y_true, y_score, thresholds)
     best = max(rows, key=lambda row: row[metric])
     return {"best": best, "sweep": rows, "metric": metric}

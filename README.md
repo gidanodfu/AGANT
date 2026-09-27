@@ -48,22 +48,24 @@ cp .env.example .env             # ajustar según necesidad
 .venv/bin/python scripts/download_paysim.py     # descarga + verifica 6.36M filas
 .venv/bin/python scripts/prepare_paysim.py      # DuckDB + splits + drift
 .venv/bin/python scripts/prepare_features.py    # memmaps float32 (15 features)
-.venv/bin/python scripts/train.py               # entrena RF online + evalúa
+.venv/bin/python scripts/model_selection.py     # compara RF vs GBM (calidad+latencia)
+.venv/bin/python scripts/train.py               # entrena el modelo online (RF/GBM) + evalúa
 .venv/bin/python scripts/thresholds.py          # selección de umbral (VALIDATION)
 .venv/bin/python scripts/evaluate_variants.py   # audit_only + ablación (± grafo)
 .venv/bin/python scripts/baselines.py           # baselines (reglas solas, GBM)
 ```
 
-Variantes: `audit_only` (post-transacción, F1 0.8761, no online) y ablación
-con features de grafo **acotadas igual que online** (la variante con grafo no
-mejora F1: −0.0117). Baselines: las reglas solas son casi inútiles (F1 0.011)
-y un `HistGradientBoosting` supera al RF servido (F1 0.846 vs 0.812).
-**Modo por lotes**: `batch_size` 32/64 con ML
-vectorizado → ~3,400 tx/s vs ~344 tx/s per-item (mismas decisiones). Ver
+Modelo servido: **HistGradientBoosting** (`AGANT_MODEL_KIND=gbm`), elegido por
+superar al RF con la misma latencia de orden (F1 0.846 vs 0.811; PR-AUC 0.943
+vs 0.843). El umbral se elige en VALIDATION y viaja en el artefacto.
+`audit_only` (post-transacción, F1 0.8761, no online) y la ablación de grafo
+con features **acotadas igual que online** (no mejora F1: −0.0117). Las reglas
+solas son casi inútiles (F1 0.011). **Modo por lotes**: `batch_size` 32/64 con
+ML vectorizado → ~4,700 tx/s vs ~435 tx/s per-item (mismas decisiones). Ver
 `docs/rendimiento.md`.
 
-Métricas TEST reproducidas (features `online_v2`): **P 0.9290 · R 0.7212 ·
-F1 0.8121 · ROC-AUC 0.9883 · PR-AUC 0.8425**.
+Métricas TEST reproducidas (features `online_v2`, GBM): **P 0.8396 · R 0.8530 ·
+F1 0.8463 · ROC-AUC 0.9988 · PR-AUC 0.9432**.
 
 ## Ejecutar
 
@@ -110,7 +112,7 @@ cd frontend && npm install && npm run build:css
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest        # 129 tests backend
+.venv/bin/python -m pytest        # 138 tests backend
 cd frontend && npm test           # 27 tests frontend (node:test)
 ```
 
@@ -126,8 +128,8 @@ constructor de payload (nunca incluye `isFraud`), validación y formateo.
 .venv/bin/python scripts/replay.py --max-records 3000
 ```
 
-Resultado medido (3,000 tx, batch 32): **total p50 1.65 ms · p95 2.28 ms ·
-p99 2.86 ms**, ML p50 1.56 ms. Detalle en `docs/rendimiento.md`.
+Resultado medido (3,000 tx, batch 32): **total p50 2.10 ms · p95 3.09 ms ·
+p99 3.48 ms**, ML p50 1.98 ms. Detalle en `docs/rendimiento.md`.
 
 ## Diagnóstico de paridad de grafo
 

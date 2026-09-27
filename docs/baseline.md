@@ -13,19 +13,24 @@ estabilización. Sirve de referencia para comparar futuros cambios.
 
 | Suite | Inicio | Actual |
 |---|---|---|
-| Backend (pytest) | 116 | **130** |
-| Frontend (node:test) | 27 | 27 |
+| Backend (pytest) | 116 | **138** |
+| Frontend (node:test) | 27 | 29 |
 
-## Métricas del modelo (RF online, 15 features, umbral 0.5)
+## Métricas del modelo (15 features `online_v2`)
 
-| Split | Versión | P | R | F1 | ROC-AUC | PR-AUC |
+Modelo servido: **HistGradientBoosting** (umbral 0.989 elegido en VALIDATION).
+
+| Split | Modelo | P | R | F1 | ROC-AUC | PR-AUC |
 |---|---|---|---|---|---|---|
-| TEST | `online_v1` | 0.9567 | 0.7228 | 0.8235 | 0.9920 | 0.8545 |
-| TEST | **`online_v2`** | 0.9290 | 0.7212 | **0.8121** | 0.9883 | 0.8425 |
-| VALIDATION | `online_v1` | 0.9217 | 0.7280 | 0.8134 | 0.9935 | 0.8122 |
-| VALIDATION | **`online_v2`** | 0.8731 | 0.7288 | **0.7945** | 0.9894 | 0.7942 |
+| TEST | `online_v1` (RF) | 0.9567 | 0.7228 | 0.8235 | 0.9920 | 0.8545 |
+| TEST | `online_v2` (RF) | 0.9290 | 0.7212 | 0.8121 | 0.9883 | 0.8425 |
+| TEST | **`online_v2` (GBM, servido)** | 0.8396 | 0.8530 | **0.8463** | 0.9988 | **0.9432** |
+| VALIDATION | `online_v2` (RF) | 0.8731 | 0.7288 | 0.7945 | 0.9894 | 0.7942 |
+| VALIDATION | **`online_v2` (GBM)** | 0.7487 | 0.8661 | **0.8031** | 0.9990 | 0.9153 |
 
-Umbral óptimo en VALIDATION (`online_v2`): **0.55** (el artefacto conserva 0.5).
+Selección (`scripts/model_selection.py`): RF vs GBM con umbral en VALIDATION y
+latencia per-item. Gana el GBM (F1 0.846 vs 0.811; PR-AUC 0.943 vs 0.843;
+p95 2.86 vs 2.56 ms → ratio 1.12, dentro del margen de 1.5).
 
 `audit_only` (post-transacción, no online): F1 0.8761 (sin cambios).
 
@@ -68,23 +73,23 @@ Bajo paridad, las features de grafo **no mejoran** el F1 en la ablación.
 |---|---|---|---|---|
 | Reglas solas (positivo = FRAUD) | 1.000 | 0.006 | 0.011 | 0.020 |
 | Reglas solas (positivo = FRAUD o SUSPICIOUS) | 0.031 | 0.994 | 0.061 | 0.031 |
-| HistGradientBoosting @0.5 | 0.287 | 0.998 | 0.446 | 0.943 |
-| HistGradientBoosting @0.989 (elegido en VALIDATION) | 0.840 | 0.853 | **0.846** | **0.943** |
-| RF online servido (`online_v2`) | 0.929 | 0.721 | 0.812 | 0.843 |
+| GBM servido @0.989 (elegido en VALIDATION) | 0.840 | 0.853 | **0.846** | **0.943** |
+| RF alterno @0.599 | 0.955 | 0.705 | 0.811 | 0.843 |
 
 Lectura honesta:
 
 - Las **reglas deterministas solas son casi inútiles** (F1 ≈ 0.01 con
   positivo=FRAUD; al relajar a SOSPECHOSAS marcan casi todo).
-- Un **GBM estándar supera al RF servido** en F1 y PR-AUC con las mismas 15
-  features y el mismo split temporal. El RF (20 árboles) está poco ajustado.
+- El **GBM supera al RF** en F1 y PR-AUC con las mismas 15 features y el mismo
+  split temporal, por lo que pasó a ser el modelo servido.
 - El umbral 0.5 del GBM no es comparable por los pesos balanceados; se
-  selecciona en VALIDATION (0.989), como se hace con el RF.
+  selecciona en VALIDATION (0.989).
 
 ## Benchmark e2e
 
-`results/benchmarks/e2e_latest.json` (3,000 tx, batch 32, ruta per-item):
-total p50 1.65 ms · p95 2.28 ms · p99 2.86 ms; ML p50 1.56 ms.
+`results/benchmarks/e2e_latest.json` (3,000 tx, batch 32, ruta per-item, GBM):
+total p50 2.10 ms · p95 3.09 ms · p99 3.48 ms; ML p50 1.98 ms (~443 tx/s).
+Replay por lotes: 435 tps (batch 1) → 4,701 tps (batch 64).
 
 ## Notas
 

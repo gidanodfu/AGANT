@@ -1,25 +1,26 @@
 # AGANT — Modelos
 
-## Random Forest online (15 features)
+## Modelo online servido (GBM, 15 features)
 
-Modelo online de referencia: **RandomForestClassifier** con 9 features
-tabulares + 6 de grafo.
+Modelo servido: **HistGradientBoostingClassifier** con 9 features tabulares +
+6 de grafo, elegido por `AGANT_MODEL_KIND` (`gbm` por defecto, `rf` alterno).
 
-- `n_estimators=20`, `max_depth=20`, `min_samples_leaf=2`,
-  `max_features=sqrt`, `class_weight=balanced_subsample`, `random_state=42`.
+- `max_iter=200`, `learning_rate=0.1`, `class_weight=balanced`,
+  `random_state=42`.
 - Carga única en startup (`MLDecisionProvider.load`); **no** se entrena en
-  una petición. En inferencia `n_jobs=1` (evita overhead por llamada).
-- Artefacto: `results/models/random_forest_online.joblib` (regenerable,
-  fuera de git). Métricas: `results/metrics/model_*.json`.
+  una petición. En inferencia no hay paralelismo por fila.
+- El **umbral** se elige por F1 en VALIDATION y se guarda en el artefacto
+  (`MLDecisionProvider` lo respeta); no es un valor mágico en código.
+- Artefacto: `results/models/online_model.joblib` (regenerable, fuera de git).
+  Métricas: `results/metrics/model_*.json`.
 
-### Métricas (TEST, umbral 0.5)
+### Métricas (TEST, umbral 0.989 elegido en VALIDATION)
 
 | P | R | F1 | ROC-AUC | PR-AUC | TN | FP | FN | TP |
 |---|---|---|---|---|---|---|---|---|
-| 0.9290 | 0.7212 | 0.8121 | 0.9883 | 0.8425 | 88,145 | 69 | 349 | 903 |
+| 0.8396 | 0.8530 | 0.8463 | 0.9988 | 0.9432 | 88,010 | 204 | 184 | 1068 |
 
-VALIDATION: P 0.8731 · R 0.7288 · F1 0.7945. Ambas reproducen el benchmark
-de referencia del proyecto (no son garantía de producción).
+VALIDATION: P 0.7487 · R 0.8661 · F1 0.8031. No son garantía de producción.
 
 ### Features (`online_v2`)
 
@@ -38,8 +39,8 @@ a gran escala.
 ## Selección de umbral y ablación
 
 - **Umbral**: barrido sobre VALIDATION (`scripts/thresholds.py`) → mejor F1 en
-  **0.55** (`results/metrics/threshold_analysis.json`); el artefacto conserva
-  0.5.
+  **0.989** (`results/metrics/threshold_analysis.json`); el artefacto lo
+  persiste y el servicio lo usa.
 - **Ablación** (`scripts/evaluate_variants.py`, RF de 15 árboles sobre 2M filas,
   features `online_v2`): F1 sin grafo **0.7949** vs con grafo **0.7833** →
   las 6 features de grafo **no mejoran** F1 bajo paridad (**−0.0117**)
@@ -48,20 +49,22 @@ a gran escala.
 - **Registro de experimentos**: `results/experiments/index.json` guarda
   dataset/split/umbral/feature_version/model_version/métricas.
 
-## Baselines
+## Selección de modelo y baselines
 
-`scripts/baselines.py` compara contra reglas solas y un
-`HistGradientBoostingClassifier` (200 iteraciones, pesos balanceados, umbral
-elegido en VALIDATION) con las mismas 15 features (`results/metrics/baselines.json`):
+`scripts/model_selection.py` compara RF y GBM con umbral en VALIDATION y
+latencia per-item (`results/metrics/model_selection.json`). El GBM gana
+(F1 0.846 vs 0.811; PR-AUC 0.943 vs 0.843; p95 2.86 vs 2.56 ms) y es el
+**modelo servido**; el RF queda como alterno (`AGANT_MODEL_KIND=rf`).
+
+`scripts/baselines.py` añade reglas solas (`results/metrics/baselines.json`):
 
 | Modelo | TEST F1 | TEST PR-AUC |
 |---|---|---|
 | Reglas solas (positivo = FRAUD) | 0.011 | 0.020 |
-| HistGradientBoosting @0.989 | **0.846** | **0.943** |
-| RF online servido (`online_v2`) | 0.812 | 0.843 |
+| GBM (servido, `online_v2`) | **0.846** | **0.943** |
+| RF (`online_v2`) | 0.811 | 0.843 |
 
-El GBM **supera** al RF servido; las reglas solas son casi inútiles. El RF
-está poco ajustado y es una línea de mejora abierta.
+Las reglas solas son casi inútiles: el ML hace el trabajo.
 
 ## Variante audit_only
 

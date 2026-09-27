@@ -23,7 +23,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 
 from app.config import Settings
 from app.contracts.enums import Decision
@@ -81,3 +81,33 @@ def test_load_and_predict(tmp_path: Path):
     assert result.decision in (Decision.FRAUD, Decision.SUSPICIOUS, Decision.LEGITIMATE)
     assert result.model_version == "test-model"
     assert result.latency_ms >= 0.0
+
+
+def test_loads_gbm_artifact_and_honors_threshold(tmp_path: Path):
+    settings = Settings(
+        data_dir=str(tmp_path / "d"),
+        results_dir=str(tmp_path / "r"),
+        threshold_suspicious=0.2,
+        threshold_fraud=0.9,
+    )
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(200, 15)).astype(np.float32)
+    y = (x[:, 0] > 0).astype(int)
+    model = HistGradientBoostingClassifier(max_iter=10, random_state=0).fit(x, y)
+    settings.models_path.mkdir(parents=True, exist_ok=True)
+    joblib.dump(
+        {
+            "model": model,
+            "feature_names": list(MODEL_FEATURE_NAMES),
+            "feature_version": "online_v2",
+            "model_version": "test-gbm",
+            "model_kind": "gbm",
+            "threshold": 0.9,
+        },
+        settings.models_path / MODEL_FILENAME,
+    )
+    provider = MLDecisionProvider(settings)
+    assert provider.load() is True
+    result = provider.predict(_features(500.0))
+    assert result.available is True
+    assert result.model_version == "test-gbm"

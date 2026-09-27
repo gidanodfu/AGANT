@@ -33,6 +33,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 LAYA_MODES = {"disabled", "pretrained", "custom"}
 DECISION_MODES = {"hybrid", "laya_all"}
+MODEL_KINDS = {"rf", "gbm"}
 
 
 class Settings(BaseSettings):
@@ -55,6 +56,8 @@ class Settings(BaseSettings):
 
     threshold_suspicious: float = 0.2
     threshold_fraud: float = 0.5
+
+    model_kind: str = "gbm"
 
     chunk_rows: int = 250_000
     batch_size: int = 32
@@ -109,6 +112,14 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"AGANT_DECISION_MODE inválido: {value!r}; usar {sorted(DECISION_MODES)}"
             )
+        return value
+
+    @field_validator("model_kind")
+    @classmethod
+    def _validate_model_kind(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value not in MODEL_KINDS:
+            raise ValueError(f"AGANT_MODEL_KIND inválido: {value!r}; usar {sorted(MODEL_KINDS)}")
         return value
 
     @model_validator(mode="after")
