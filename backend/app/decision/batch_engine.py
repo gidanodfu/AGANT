@@ -49,6 +49,10 @@ class BatchDecisionEngine:
         *,
         batch_size: int = 32,
         decision_mode: str | None = None,
+        graph: GraphContextProvider | None = None,
+        ml: MLDecisionProvider | None = None,
+        rules: RulesEngine | None = None,
+        features: FeatureBuilder | None = None,
     ) -> None:
         self.settings = settings
         self.state = state
@@ -57,11 +61,16 @@ class BatchDecisionEngine:
         self.decide_all = self.decision_mode == "laya_all"
         self.laya_batch = max(1, int(batch_size))
         self.laya = laya_engine
-        self.graph = GraphContextProvider(settings)
-        self.ml = MLDecisionProvider(settings)
-        self.ml.load()
-        self.rules = RulesEngine(settings)
-        self.features = FeatureBuilder()
+        # Componentes inyectables: la ruta de API reutiliza el mismo grafo/ML
+        # que la decisión individual; los flujos crean su propio estado aislado.
+        self.graph = graph if graph is not None else GraphContextProvider(settings)
+        if ml is not None:
+            self.ml = ml
+        else:
+            self.ml = MLDecisionProvider(settings)
+            self.ml.load()
+        self.rules = rules if rules is not None else RulesEngine(settings)
+        self.features = features if features is not None else FeatureBuilder()
         self.policy = FallbackPolicy()
         self.state_builder = DecisionStateBuilder(settings)
         self.laya_active = laya_engine.enabled and laya_engine.status.value == "ready"

@@ -117,3 +117,4 @@ class AppState:
     ml: object | None = None
     laya: object | None = None
     live_drift: object | None = None
+    batch_engine: object | None = None

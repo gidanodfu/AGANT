@@ -62,13 +62,10 @@ async def decide_batch(
     if len(transactions) > MAX_BATCH:
         raise ValidationError(f"el lote excede el máximo de {MAX_BATCH} transacciones")
 
-    results = []
-    for transaction in transactions:
-        result = await service.process(
-            transaction, source=Source.LIVE, correlation_id=_request_id(request)
-        )
-        results.append(_serialize(result))
-    return ApiResponse.ok(results, request_id=_request_id(request))
+    results = await service.process_batch(
+        transactions, source=Source.LIVE, correlation_id=_request_id(request)
+    )
+    return ApiResponse.ok([_serialize(result) for result in results], request_id=_request_id(request))
 
 
 def _serialize(result) -> dict:

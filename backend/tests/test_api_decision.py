@@ -79,6 +79,18 @@ def test_batch_decision_and_limits(settings: Settings):
     assert empty.status_code == 400
 
 
+def test_batch_matches_individual_decisions(settings: Settings):
+    payloads = [_payload(f"T{i}", amount=10.0 + i * 5) for i in range(5)]
+    with _client(settings) as client:
+        individual = [
+            client.post("/api/v1/decision", json=payload).json()["data"]["final_decision"]
+            for payload in payloads
+        ]
+    with _client(settings) as client:
+        batch = client.post("/api/v1/decision/batch", json=payloads).json()["data"]
+    assert [item["final_decision"] for item in batch] == individual
+
+
 def test_graph_endpoint_derives_nodes_and_edges(settings: Settings):
     with _client(settings) as client:
         client.post("/api/v1/decision", json=_payload())

@@ -49,6 +49,7 @@ from .api.state import AppState, Store
 from .config import Settings, get_settings
 from .contracts import ApiResponse, Event, EventType, Source
 from .decision import DecisionEngine, DecisionStateBuilder, LayaDecisionEngine
+from .decision.batch_engine import BatchDecisionEngine
 from .errors import AGANTError, ErrorManager, ValidationError
 from .events import EventBus
 from .evidence.engine import EvidenceEngine
@@ -83,6 +84,16 @@ def _build_state(settings: Settings) -> AppState:
     )
     metrics = MetricsCollector()
     errors.metrics = metrics
+    batch_engine = BatchDecisionEngine(
+        settings,
+        None,
+        laya,
+        batch_size=settings.batch_size,
+        graph=evidence.graph_provider,
+        ml=evidence.ml,
+        rules=evidence.rules,
+        features=evidence.feature_builder,
+    )
     return AppState(
         settings=settings,
         errors=errors,
@@ -93,6 +104,7 @@ def _build_state(settings: Settings) -> AppState:
         ml=ml,
         laya=laya,
         live_drift=LiveDriftMonitor(settings),
+        batch_engine=batch_engine,
     )
 
 

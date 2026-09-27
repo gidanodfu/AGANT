@@ -60,6 +60,33 @@ class DecisionService:
         self.record(result, transaction, source)
         return result
 
+    async def process_batch(
+        self,
+        transactions: list[Transaction],
+        *,
+        source: Source = Source.LIVE,
+        correlation_id: str = "-",
+    ) -> list[DecisionResult]:
+        """Procesa un lote reutilizando el motor vectorizado de la aplicación.
+
+        Mantiene la misma semántica que ``process`` (features causales, grafo
+        compartido, reglas, ML por lote y fallback por ítem). Con menos de dos
+        transacciones o sin motor de lote, cae a la ruta individual.
+        """
+        engine = getattr(self.state, "batch_engine", None)
+        if engine is None or len(transactions) <= 1:
+            return [
+                await self.process(transaction, source=source, correlation_id=correlation_id)
+                for transaction in transactions
+            ]
+        async with self._lock:
+            results = await asyncio.to_thread(
+                engine.decide_block, transactions, source, correlation_id
+            )
+        for result, transaction in zip(results, transactions):
+            self.record(result, transaction, source)
+        return results
+
     def record(
         self,
         result: DecisionResult,

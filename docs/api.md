@@ -24,7 +24,7 @@ Error:
 | GET | `/health` | Estado básico (`ready`/`degraded`) |
 | GET | `/api/v1/system/status` | Estado por componente (config, gpu, dataset, model, laya) |
 | POST | `/api/v1/decision` | Decide una transacción (`source=live`) |
-| POST | `/api/v1/decision/batch` | Hasta 1000 transacciones |
+| POST | `/api/v1/decision/batch` | Hasta 1000 transacciones; ML vectorizado por lote, misma semántica que `/decision` |
 | GET | `/api/v1/transactions` | Transacciones recientes (`limit`, `source`) |
 | GET | `/api/v1/decisions` | Decisiones recientes (`limit`, `source`) |
 | GET | `/api/v1/laya-decisions` | Decisiones con `laya.invoked=true` |
