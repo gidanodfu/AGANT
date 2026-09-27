@@ -24,20 +24,32 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 
 from fastapi import Request
 
 from ..contracts.enums import ErrorCode, Severity
 from ..errors import AGANTError
 
-_BUCKETS: dict[str, deque] = defaultdict(deque)
+_BUCKETS: "OrderedDict[str, deque]" = OrderedDict()
 _WINDOW_S = 60.0
+_MAX_BUCKETS = 10_000
+
+
+def _bucket(key: str) -> deque:
+    bucket = _BUCKETS.get(key)
+    if bucket is None:
+        bucket = _BUCKETS[key] = deque()
+    _BUCKETS.move_to_end(key)
+    if len(_BUCKETS) > _MAX_BUCKETS:
+        # Evita crecimiento ilimitado por IPs distintas (LRU por último uso).
+        _BUCKETS.popitem(last=False)
+    return bucket
 
 
 def _check(key: str, limit: int) -> None:
     now = time.monotonic()
-    bucket = _BUCKETS[key]
+    bucket = _bucket(key)
     while bucket and now - bucket[0] > _WINDOW_S:
         bucket.popleft()
     if len(bucket) >= limit:
