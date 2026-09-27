@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     rule_dest_fan_in: int = 10
 
     max_events: int = 1000
+    event_history: int = 1000
     ws_replay: bool = False
 
     decision_mode: str = "hybrid"

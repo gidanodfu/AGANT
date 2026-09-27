@@ -72,3 +72,15 @@ def test_ws_rejects_disallowed_origin(tmp_path):
                 "/api/v1/ws/events", headers={"origin": "http://malicioso.test"}
             ) as ws:
                 ws.receive_json()
+
+
+def test_ws_backfills_missed_events(tmp_path):
+    app = create_app(_settings(tmp_path, ""))
+    with TestClient(app) as client:
+        client.post("/api/v1/decision", json=_payload("T1"))
+        client.post("/api/v1/decision", json=_payload("T2"))
+        with client.websocket_connect("/api/v1/ws/events?last_sequence=2") as ws:
+            first = ws.receive_json()
+            second = ws.receive_json()
+    assert first["sequence"] == 3
+    assert second["sequence"] == 4

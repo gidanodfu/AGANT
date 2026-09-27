@@ -25,12 +25,17 @@ export const CONNECTION_LABELS = {
   error: "Error de conexión",
 };
 
+export function resumePath(path, lastSequence) {
+  return lastSequence > 0 ? `${path}?last_sequence=${lastSequence}` : path;
+}
+
 export function createSocket({ path = "/api/v1/ws/events", onEvent, onState }) {
   let socket = null;
   let attempt = 0;
   let timer = null;
   let stopped = false;
   let state = "connecting";
+  let lastSequence = 0;
 
   function update(next) {
     state = next;
@@ -41,7 +46,7 @@ export function createSocket({ path = "/api/v1/ws/events", onEvent, onState }) {
     if (stopped) return;
     update(attempt === 0 ? "connecting" : "reconnecting");
     try {
-      socket = new WebSocket(WS_BASE + path);
+      socket = new WebSocket(WS_BASE + resumePath(path, lastSequence));
     } catch (error) {
       schedule();
       return;
@@ -52,11 +57,16 @@ export function createSocket({ path = "/api/v1/ws/events", onEvent, onState }) {
     };
     socket.onmessage = (event) => {
       if (!onEvent) return;
+      let payload;
       try {
-        onEvent(JSON.parse(event.data));
+        payload = JSON.parse(event.data);
       } catch {
-        /* evento no interpretable: se ignora */
+        return; /* evento no interpretable: se ignora */
       }
+      if (typeof payload.sequence === "number" && payload.sequence > lastSequence) {
+        lastSequence = payload.sequence;
+      }
+      onEvent(payload);
     };
     socket.onerror = () => {
       update("error");

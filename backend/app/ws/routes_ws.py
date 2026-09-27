@@ -47,6 +47,20 @@ def _origin_allowed(websocket: WebSocket, allowed: list[str]) -> bool:
     return websocket.headers.get("origin") in allowed
 
 
+def _allowed(event_type: EventType, allowed_types: set[EventType] | None) -> bool:
+    return allowed_types is None or event_type in allowed_types
+
+
+def _resume_sequence(websocket: WebSocket) -> int | None:
+    raw = websocket.query_params.get("last_sequence")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 async def _stream(websocket: WebSocket, allowed_types: set[EventType] | None) -> None:
     state = websocket.app.state.services
     if not _origin_allowed(websocket, state.settings.allowed_ws_origin_list):
@@ -57,9 +71,17 @@ async def _stream(websocket: WebSocket, allowed_types: set[EventType] | None) ->
     queue = state.bus.subscribe()
     state.ws_clients += 1
     try:
+        # Reconstrucción tras reconexión: reenvía los eventos retenidos que el
+        # cliente no alcanzó a recibir (deduplica por event_id/sequence en el
+        # cliente).
+        last_sequence = _resume_sequence(websocket)
+        if last_sequence is not None:
+            for event in state.bus.history_since(last_sequence):
+                if _allowed(event.event_type, allowed_types):
+                    await websocket.send_json(event.model_dump(mode="json"))
         while True:
             event = await queue.get()
-            if allowed_types is None or event.event_type in allowed_types:
+            if _allowed(event.event_type, allowed_types):
                 await websocket.send_json(event.model_dump(mode="json"))
     except WebSocketDisconnect:
         pass

@@ -30,6 +30,7 @@ WebSocket es sólo el transporte: **no** convierte un replay en tráfico real.
 | `system.status` / `system.error` | estado/errores |
 | `flow.status` | avance de un flujo Live/Replay (contadores, p95, `batch_mode`, `batch_size`, `block_size`, `publish_mode`) |
 | `replay.status` | avance de replay (CLI) |
+| `metrics.updated` | SSE de métricas agregadas (1 s) |
 
 ## Payload de decisión autosuficiente
 
@@ -60,7 +61,16 @@ renderizar sin joins:
 En fallos relevantes el backend publica `system.error` con
 `code`, `message` (seguro), `severity`, `operation` y `request_id`.
 `/home` los muestra en «Errores recientes» sin exponer trazas.
-| `metrics.updated` | SSE de métricas |
+
+## Reconexión y recuperación
+
+El `EventBus` retiene un **historial acotado** de los últimos eventos
+(`AGANT_EVENT_HISTORY`, por defecto 1000). Al reconectarse, el cliente pasa
+`?last_sequence=<n>` con su última `sequence` vista y el servidor reenvía los
+eventos retenidos posteriores antes de continuar con el vivo. El cliente
+deduplica por `event_id`+`sequence`, de modo que cualquier solapamiento se
+descarta. Si la caída supera el historial retenido, esos eventos no se
+recuperan (se documenta, no se oculta).
 
 ## Identidad y orden
 
@@ -82,4 +92,5 @@ Las pérdidas se **cuentan** (`events_dropped`) y se exponen en
 Estados: `Conectando…`, `Conectado`, `Reconectando…`, `Sin conexión`,
 `Error`. Reconexión con backoff exponencial (máx. 15 s); la desconexión
 no se oculta. El bootstrap HTTP carga estado inicial y el WebSocket
-reconcilia con actualizaciones.
+reconcilia con actualizaciones. En cada reconexión el cliente adjunta
+`last_sequence` para recuperar los eventos perdidos dentro del historial.
