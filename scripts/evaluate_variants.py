@@ -73,7 +73,7 @@ def main() -> int:
             "dataset": "paysim",
             "split": "validation",
             "threshold": 0.5,
-            "feature_version": "online_v1",
+            "feature_version": "online_v2",
             "model_version": "rf_ablation",
             "metrics": {"delta_f1": ablation["delta_f1"]},
         },

@@ -17,10 +17,13 @@
 
 """Construcción offline de las 15 features online hacia memmaps float32.
 
-Las seis features de grafo son **causales**: usan ``RANGE BETWEEN
-UNBOUNDED PRECEDING AND 1 PRECEDING`` sobre ``step``, de modo que el
-contexto es estrictamente de pasos anteriores. No se inventa un orden
-interno dentro de un mismo ``step``.
+Las seis features de grafo se calculan con el **mismo** ``GraphState`` que
+usa la ruta online, con los mismos límites LRU de configuración. Así el
+entrenamiento y el servicio comparten exactamente la misma definición de
+contexto: la paridad es por construcción, no por coincidencia.
+
+El contexto es causal: ``GraphState`` sólo ve pasos estrictamente anteriores
+y difiere las actualizaciones del ``step`` en curso.
 """
 
 from __future__ import annotations
@@ -34,39 +37,27 @@ import numpy as np
 from ..config import Settings
 from ..contracts.transaction import MODEL_FEATURE_NAMES
 from ..data.paysim_db import connect
+from .graph_state import GraphState
 
-FEATURE_VERSION = "online_v1"
+# La definición de features cambió (grafo acotado idéntico a online): nueva
+# versión para no reutilizar modelos entrenados con la versión anterior.
+FEATURE_VERSION = "online_v2"
 
-_GRAPH_WINDOW = "RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING"
+_GRAPH_SEMANTICS = "GraphState online causal con LRU de cuentas/aristas"
 
-_FEATURE_QUERY = f"""
-WITH base AS (
-  SELECT row_id, step, isFraud,
-         amount, oldbalanceOrg, oldbalanceDest, type, nameOrig, nameDest,
-         count(*) OVER (PARTITION BY nameOrig ORDER BY step {_GRAPH_WINDOW}) AS origin_degree_before,
-         count(*) OVER (PARTITION BY nameDest ORDER BY step {_GRAPH_WINDOW}) AS destination_degree_before,
-         count(DISTINCT nameDest) OVER (PARTITION BY nameOrig ORDER BY step {_GRAPH_WINDOW}) AS origin_unique_destinations_before,
-         count(DISTINCT nameOrig) OVER (PARTITION BY nameDest ORDER BY step {_GRAPH_WINDOW}) AS destination_unique_origins_before,
-         count(*) OVER (PARTITION BY nameOrig, nameDest ORDER BY step {_GRAPH_WINDOW}) AS edge_count_before
-  FROM transactions
-)
+_TYPE_ORDER = ("CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER")
+
+# Columnas 3..17 del vector: 9 tabulares + 6 de grafo (MODEL_FEATURE_NAMES).
+_TABULAR_QUERY = """
 SELECT row_id, step, isFraud,
-       step::DOUBLE AS f_step,
-       amount::DOUBLE AS f_amount,
-       oldbalanceOrg::DOUBLE AS f_origin_old_balance,
-       oldbalanceDest::DOUBLE AS f_destination_old_balance,
-       (type = 'CASH_IN')::INT AS type_CASH_IN,
-       (type = 'CASH_OUT')::INT AS type_CASH_OUT,
-       (type = 'DEBIT')::INT AS type_DEBIT,
-       (type = 'PAYMENT')::INT AS type_PAYMENT,
-       (type = 'TRANSFER')::INT AS type_TRANSFER,
-       origin_degree_before, destination_degree_before,
-       origin_unique_destinations_before, destination_unique_origins_before,
-       edge_count_before,
-       CASE WHEN edge_count_before > 0 THEN 1 ELSE 0 END AS edge_seen_before
-FROM base
+       amount, oldbalanceOrg, oldbalanceDest, type, nameOrig, nameDest
+FROM transactions
 ORDER BY row_id
 """
+
+
+def _one_hot(transaction_type: str) -> list[float]:
+    return [1.0 if transaction_type == name else 0.0 for name in _TYPE_ORDER]
 
 
 @dataclass(frozen=True)
@@ -121,19 +112,40 @@ def build_features(settings: Settings, *, force: bool = False) -> FeatureArtifac
     labels = _memmap(artifacts.labels_path, "uint8", (total,))
     steps = _memmap(artifacts.steps_path, "int16", (total,))
 
-    cursor = conn.execute(_FEATURE_QUERY)
+    state = GraphState(settings.graph_max_accounts, settings.graph_max_edges)
+    cursor = conn.execute(_TABULAR_QUERY)
     offset = 0
     chunk = int(settings.chunk_rows)
     while True:
         rows = cursor.fetchmany(chunk)
         if not rows:
             break
-        array = np.asarray(rows, dtype=np.float64)
-        # columnas 0=row_id, 1=step, 2=isFraud, 3..17 = features
-        n = array.shape[0]
-        features[offset:offset + n] = array[:, 3:18].astype(np.float32)
-        labels[offset:offset + n] = array[:, 2].astype(np.uint8)
-        steps[offset:offset + n] = array[:, 1].astype(np.int16)
+        n = len(rows)
+        block = np.empty((n, 15), dtype=np.float32)
+        labels_block = np.empty((n,), dtype=np.uint8)
+        steps_block = np.empty((n,), dtype=np.int16)
+        for i, row in enumerate(rows):
+            _, step, is_fraud, amount, ob_org, ob_dest, ttype, orig, dest = row
+            step = int(step)
+            state.advance(step)
+            context = state.context(orig, dest)
+            block[i, 0] = step
+            block[i, 1] = amount
+            block[i, 2] = ob_org
+            block[i, 3] = ob_dest
+            block[i, 4:9] = _one_hot(ttype)
+            block[i, 9] = context.origin_degree_before
+            block[i, 10] = context.destination_degree_before
+            block[i, 11] = context.origin_unique_destinations_before
+            block[i, 12] = context.destination_unique_origins_before
+            block[i, 13] = context.edge_count_before
+            block[i, 14] = context.edge_seen_before
+            labels_block[i] = is_fraud
+            steps_block[i] = step
+            state.observe(orig, dest, step)
+        features[offset:offset + n] = block
+        labels[offset:offset + n] = labels_block
+        steps[offset:offset + n] = steps_block
         offset += n
 
     if offset != total:
@@ -150,7 +162,11 @@ def build_features(settings: Settings, *, force: bool = False) -> FeatureArtifac
         "feature_names": list(MODEL_FEATURE_NAMES),
         "fraud": fraud,
         "fraud_rate": fraud / total,
-        "graph_window": _GRAPH_WINDOW,
+        "graph_window": _GRAPH_SEMANTICS,
+        "graph_caps": {
+            "max_accounts": settings.graph_max_accounts,
+            "max_edges": settings.graph_max_edges,
+        },
         "files": {
             "features": artifacts.features_path.name,
             "labels": artifacts.labels_path.name,

@@ -126,3 +126,38 @@ def test_offline_online_parity_large(tmp_path: Path):
         offline = [float(features[i][c]) for c in graph_columns]
         assert online == offline, f"fila {i}: online={online} offline={offline}"
         state.observe(origin, dest, int(step))
+
+
+def test_offline_graph_respects_caps_under_eviction(tmp_path: Path):
+    # Caps diminutos fuerzan evicción LRU; offline y online deben seguir
+    # coincidiendo porque comparten el mismo GraphState.
+    settings = Settings(
+        data_dir=str(tmp_path / "data"),
+        results_dir=str(tmp_path / "res"),
+        graph_max_accounts=3,
+        graph_max_edges=3,
+    )
+    rows = _synth_rows(500)
+    csv = settings.raw_data_path / "paysim.csv"
+    csv.parent.mkdir(parents=True, exist_ok=True)
+    csv.write_text(HEADER + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
+
+    build_database(settings, force=True)
+    features = build_features(settings, force=True).load_features()
+
+    state = GraphState(max_accounts=3, max_edges=3)
+    graph_columns = range(9, 15)
+    for i, row in enumerate(rows):
+        step, _, _, origin, _, _, dest, _, _, _, _ = row.split(",")
+        context = state.context(origin, dest, int(step))
+        online = [
+            context.origin_degree_before,
+            context.destination_degree_before,
+            context.origin_unique_destinations_before,
+            context.destination_unique_origins_before,
+            context.edge_count_before,
+            context.edge_seen_before,
+        ]
+        offline = [float(features[i][c]) for c in graph_columns]
+        assert online == offline, f"fila {i}: online={online} offline={offline}"
+        state.observe(origin, dest, int(step))
