@@ -39,6 +39,7 @@ class MLDecisionProvider:
         self._model = None
         self._model_version: str | None = None
         self._feature_version: str | None = None
+        self._threshold_fraud: float | None = None
         self._error: str | None = None
 
     @property
@@ -75,6 +76,12 @@ class MLDecisionProvider:
                 self._model.n_jobs = 1
             self._model_version = artifact.get("model_version")
             self._feature_version = artifact.get("feature_version")
+            # El umbral de fraude viaja con el artefacto (seleccionado en
+            # VALIDATION); si falta, se usa el de configuración.
+            raw_threshold = artifact.get("threshold")
+            self._threshold_fraud = (
+                float(raw_threshold) if isinstance(raw_threshold, (int, float)) else None
+            )
             self._error = None
             return True
         except Exception as exc:  # noqa: BLE001 - se registra, no se silencia
@@ -83,7 +90,10 @@ class MLDecisionProvider:
             return False
 
     def _decide(self, score: float) -> Decision:
-        if score >= self.settings.threshold_fraud:
+        fraud_threshold = (
+            self._threshold_fraud if self._threshold_fraud is not None else self.settings.threshold_fraud
+        )
+        if score >= fraud_threshold:
             return Decision.FRAUD
         if score >= self.settings.threshold_suspicious:
             return Decision.SUSPICIOUS

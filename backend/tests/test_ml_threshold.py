@@ -63,3 +63,18 @@ def test_threshold_from_settings_when_artifact_lacks_it(tmp_path: Path):
     assert provider._decide(0.1) is Decision.LEGITIMATE
     assert provider._decide(0.3) is Decision.SUSPICIOUS
     assert provider._decide(0.6) is Decision.FRAUD
+
+
+def test_threshold_from_artifact_overrides_settings(tmp_path: Path):
+    settings = Settings(
+        data_dir=str(tmp_path / "d"),
+        results_dir=str(tmp_path / "r"),
+        threshold_suspicious=0.2,
+        threshold_fraud=0.5,
+    )
+    _write_model(settings, threshold=0.9)
+    provider = MLDecisionProvider(settings)
+    assert provider.load() is True
+    # el artefacto fija 0.9: 0.6 ya no es fraude (settings habría dicho FRAUD)
+    assert provider._decide(0.6) is Decision.SUSPICIOUS
+    assert provider._decide(0.95) is Decision.FRAUD
