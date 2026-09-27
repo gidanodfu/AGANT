@@ -36,6 +36,7 @@ class EventBus:
         self.max_queue = max_queue
         self.subscriber_queue = subscriber_queue
         self._subscribers: set[asyncio.Queue] = set()
+        self._drops_by_subscriber: dict[asyncio.Queue, int] = {}
         self._sequence = itertools.count(1)
         self.events_published = 0
         self.events_dropped = 0
@@ -47,10 +48,12 @@ class EventBus:
     def subscribe(self) -> asyncio.Queue:
         queue: asyncio.Queue = asyncio.Queue(maxsize=self.subscriber_queue)
         self._subscribers.add(queue)
+        self._drops_by_subscriber[queue] = 0
         return queue
 
     def unsubscribe(self, queue: asyncio.Queue) -> None:
         self._subscribers.discard(queue)
+        self._drops_by_subscriber.pop(queue, None)
 
     @property
     def subscribers(self) -> int:
@@ -60,19 +63,23 @@ class EventBus:
     def queue_depth(self) -> int:
         return max((q.qsize() for q in self._subscribers), default=0)
 
+    def _count_drop(self, queue: asyncio.Queue) -> None:
+        self.events_dropped += 1
+        self._drops_by_subscriber[queue] = self._drops_by_subscriber.get(queue, 0) + 1
+
     def publish(self, event: Event) -> bool:
         start = time.perf_counter()
         for queue in list(self._subscribers):
             if queue.full():
                 try:
                     queue.get_nowait()
-                    self.events_dropped += 1
+                    self._count_drop(queue)
                 except asyncio.QueueEmpty:
                     pass
             try:
                 queue.put_nowait(event)
             except asyncio.QueueFull:
-                self.events_dropped += 1
+                self._count_drop(queue)
         self.events_published += 1
         latency = (time.perf_counter() - start) * 1000.0
         self._publish_latencies.append(latency)
@@ -91,6 +98,8 @@ class EventBus:
         return {
             "events_published": self.events_published,
             "events_dropped": self.events_dropped,
+            "dropped_subscribers": sum(1 for v in self._drops_by_subscriber.values() if v),
+            "max_subscriber_drops": max(self._drops_by_subscriber.values(), default=0),
             "queue_depth": self.queue_depth,
             "subscribers": self.subscribers,
             "publish_latency_p50_ms": p50,

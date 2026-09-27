@@ -30,7 +30,7 @@ from typing import Any
 from pydantic import ValidationError as PydanticValidationError
 
 from ..contracts.api import ErrorResponse
-from ..contracts.enums import ErrorCode, Severity
+from ..contracts.enums import ErrorCode, Severity, Source
 from .taxonomy import AGANTError, ValidationError
 
 logger = logging.getLogger("agant.errors")
@@ -89,12 +89,12 @@ class ErrorManager:
             str(exc),
             exc_info=not isinstance(exc, AGANTError),
         )
-        self._record(error.severity)
+        self._record(error.severity, source or error.source)
         return error
 
-    def _record(self, severity: Severity) -> None:
+    def _record(self, severity: Severity, source: str | None = None) -> None:
         if self.metrics is None:
             return
         record = getattr(self.metrics, "record_error", None)
         if record is not None:
-            record(severity.value)
+            record(severity.value, source or Source.LIVE.value)

@@ -113,7 +113,11 @@ class ImportFlowEngine:
         except Exception as exc:  # noqa: BLE001 - se reporta como estado
             self.error = type(exc).__name__
             self.finished = True
-            logger.error("import falló: %s", exc)
+            errors = getattr(self.state, "errors", None)
+            if errors is not None:
+                errors.log(exc, source=Source.LIVE.value, operation="import")
+            else:
+                logger.error("import falló: %s", exc)
             self._emit_status("error")
 
     def _decide_block(self, transactions: list[Transaction]) -> list:

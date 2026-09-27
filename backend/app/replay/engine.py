@@ -155,7 +155,11 @@ class ReplayEngine:
         except Exception as exc:  # noqa: BLE001 - se reporta como estado, no se silencia
             self.error = type(exc).__name__
             self.finished = True
-            logger.error("replay falló: %s", exc)
+            errors = getattr(self.state, "errors", None)
+            if errors is not None:
+                errors.log(exc, source=Source.REPLAY.value, operation="replay")
+            else:
+                logger.error("replay falló: %s", exc)
             self._emit_status("error")
 
     def _build_query(self) -> str:

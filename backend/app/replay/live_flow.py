@@ -142,7 +142,11 @@ class LiveFlowEngine:
         except Exception as exc:  # noqa: BLE001 - se reporta como estado, no se silencia
             self.error = type(exc).__name__
             self.finished = True
-            logger.error("live flow falló: %s", exc)
+            errors = getattr(self.state, "errors", None)
+            if errors is not None:
+                errors.log(exc, source=Source.LIVE.value, operation="live-flow")
+            else:
+                logger.error("live flow falló: %s", exc)
             self._emit_status("error")
 
     def _synthetic(self, index: int, rng: random.Random) -> Transaction:

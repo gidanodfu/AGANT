@@ -32,6 +32,7 @@ from app.errors import (
     TimeoutError_,
     ValidationError,
 )
+from app.observability import MetricsCollector
 
 
 def test_classify_known_and_unknown():
@@ -74,3 +75,11 @@ def test_timeout_and_validation_status_codes():
     assert ValidationError("x").status == 400
     assert TimeoutError_("x").status == 504
     assert LayaError("x").severity is Severity.RECOVERABLE
+
+
+def test_error_is_recorded_with_its_source():
+    metrics = MetricsCollector()
+    manager = ErrorManager(metrics)
+    manager.log(RuntimeError("boom"), source="replay")
+    assert metrics.error_counts["replay:critical"] == 1
+    assert metrics.error_counts["live:critical"] == 0

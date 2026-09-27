@@ -69,3 +69,14 @@ def test_drops_accumulate_across_subscribers():
     assert q1.qsize() == 2 and q2.qsize() == 2
     # contador global: 3 descartes por cada suscriptor
     assert bus.events_dropped == 6
+
+
+def test_per_subscriber_drop_stats():
+    bus = EventBus(subscriber_queue=1)
+    bus.subscribe()
+    bus.subscribe()
+    for i in range(3):
+        bus.publish(_event(bus, f"T{i}"))
+    stats = bus.stats()
+    assert stats["max_subscriber_drops"] == 2
+    assert stats["dropped_subscribers"] == 2
