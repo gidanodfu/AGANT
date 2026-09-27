@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-09-26T16:32:52-0500",
+  "dataset": "paysim",
+  "rows_total": 6362620,
+  "splits": [
+    {
+      "split": "train",
+      "step_min": 1,
+      "step_max": 520,
+      "rows": 6082007,
+      "fraud": 5781,
+      "fraud_rate": 0.0009505086067806235
+    },
+    {
+      "split": "validation",
+      "step_min": 521,
+      "step_max": 631,
+      "rows": 191147,
+      "fraud": 1180,
+      "fraud_rate": 0.006173259323975788
+    },
+    {
+      "split": "test",
+      "step_min": 632,
+      "step_max": 743,
+      "rows": 89466,
+      "fraud": 1252,
+      "fraud_rate": 0.01399414302640109
+    }
+  ],
+  "drift": {
+    "steps": 743,
+    "steps_with_fraud": 741,
+    "min_step_rows": 100,
+    "rate_p10": 0.00024180872929512756,
+    "rate_p50": 0.0009753901560624249,
+    "rate_p90": 0.015350877192982455,
+    "early_rate": 0.0007856768815381636,
+    "late_rate": 0.0037706690244183323,
+    "note": "La variación temporal de la tasa de fraude en PaySim es un fenómeno del dataset, no comportamiento de producción."
+  }
+}

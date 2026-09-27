@@ -1,0 +1,34 @@
+# Entorno
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Configuracion / secretos
+.env
+.env.local
+
+# Datos (no redistribuibles)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Artefactos regenerables
+models/*
+!models/.gitkeep
+results/models/*.joblib
+results/benchmarks/*.json
+!results/benchmarks/.gitkeep
+results/reports/*
+!results/reports/.gitkeep
+
+# Frontend (build)
+frontend/dist/
+node_modules/
+
+# Sistema
+.DS_Store
+*.log

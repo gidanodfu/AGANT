@@ -1,0 +1,36 @@
+{
+  "model": "RandomForestClassifier",
+  "variant": "audit_only",
+  "audit_only": true,
+  "warning": "Usa features post-transacción; NO es apto para inferencia online.",
+  "feature_names": [
+    "amount",
+    "oldbalanceOrg",
+    "newbalanceOrig",
+    "oldbalanceDest",
+    "newbalanceDest",
+    "type_CASH_IN",
+    "type_CASH_OUT",
+    "type_DEBIT",
+    "type_PAYMENT",
+    "type_TRANSFER"
+  ],
+  "split": "test",
+  "threshold": 0.5,
+  "train_rows": 1500000,
+  "metrics": {
+    "threshold": 0.5,
+    "precision": 0.9736328125,
+    "recall": 0.7963258785942492,
+    "f1": 0.8760984182776801,
+    "roc_auc": 0.9923543012704149,
+    "pr_auc": 0.9558534680353505,
+    "tn": 88187,
+    "fp": 27,
+    "fn": 255,
+    "tp": 997,
+    "rows": 89466,
+    "fraud": 1252
+  },
+  "saved_at": "2026-09-26T18:15:50-0500"
+}

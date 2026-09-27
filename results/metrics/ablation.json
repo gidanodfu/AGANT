@@ -1,0 +1,43 @@
+{
+  "dataset": "paysim",
+  "split": "validation",
+  "elapsed_s": 32.07699174499976,
+  "online_without_graph": {
+    "graph": false,
+    "n_features": 9,
+    "metrics": {
+      "threshold": 0.5,
+      "precision": 0.8880753138075314,
+      "recall": 0.7194915254237289,
+      "f1": 0.7949438202247191,
+      "roc_auc": 0.9928799520309194,
+      "pr_auc": 0.8404444820822963,
+      "tn": 189860,
+      "fp": 107,
+      "fn": 331,
+      "tp": 849,
+      "rows": 191147,
+      "fraud": 1180
+    }
+  },
+  "online_with_graph": {
+    "graph": true,
+    "n_features": 15,
+    "metrics": {
+      "threshold": 0.5,
+      "precision": 0.8838383838383839,
+      "recall": 0.7415254237288136,
+      "f1": 0.8064516129032258,
+      "roc_auc": 0.9748236446597818,
+      "pr_auc": 0.8204188381816389,
+      "tn": 189852,
+      "fp": 115,
+      "fn": 305,
+      "tp": 875,
+      "rows": 191147,
+      "fraud": 1180
+    }
+  },
+  "delta_f1": 0.011507792678506656,
+  "saved_at": "2026-09-26T18:16:22-0500"
+}

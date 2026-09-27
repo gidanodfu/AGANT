@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGANT — Panel de fraude</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/styles/app.css" />
+  </head>
+  <body class="bg-canvas text-fg antialiased">
+    <div class="min-h-screen flex">
+      <aside id="sidebar" class="w-56 shrink-0 border-r border-line bg-sidebar hidden md:flex md:flex-col fixed md:static inset-y-0 left-0 z-40">
+        <div class="px-5 py-4 border-b border-line">
+          <div class="flex items-center gap-2 font-semibold tracking-tight">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+            <span>AGANT</span>
+          </div>
+          <p class="text-xs text-muted mt-1">Detección de fraude</p>
+        </div>
+        <nav class="p-2 text-sm" id="nav"></nav>
+        <div class="mt-auto p-4 border-t border-line text-xs text-muted" id="sidebar-status"></div>
+      </aside>
+
+      <div class="flex-1 flex flex-col min-w-0">
+        <header class="border-b border-line px-5 py-3 flex items-center justify-between gap-4">
+          <button id="nav-toggle" class="md:hidden inline-flex items-center justify-center border border-line-strong rounded p-2 hover:bg-hover focus-ring" aria-label="Abrir menú">
+            <i data-lucide="menu" class="w-4 h-4"></i>
+          </button>
+          <div class="min-w-0 flex-1">
+            <h1 class="text-base font-semibold truncate" id="view-title">Panel</h1>
+            <p class="text-xs text-muted" id="view-subtitle">Estado general del sistema</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span id="mode-chip" class="badge badge-neutral hidden sm:inline-flex font-mono"></span>
+            <span id="connection" class="inline-flex items-center gap-1.5 text-fg-secondary">
+              <span class="dot dot-neutral" id="connection-dot"></span>
+              <span id="connection-label">Conectando…</span>
+            </span>
+            <button id="feed-toggle" class="inline-flex items-center justify-center border border-line-strong rounded p-2 hover:bg-hover focus-ring" aria-label="Pausar feed" title="Pausar/reanudar feed">
+              <i data-lucide="pause" class="w-4 h-4"></i>
+            </button>
+            <button id="theme-toggle" class="inline-flex items-center justify-center border border-line-strong rounded p-2 hover:bg-hover focus-ring" aria-label="Cambiar tema">
+              <i data-lucide="moon" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </header>
+
+        <div id="error-region" class="empty:hidden px-5 pt-3"></div>
+        <main id="view" class="flex-1 min-h-0 overflow-auto p-5"></main>
+      </div>
+    </div>
+
+    <script src="/vendor/lucide.min.js"></script>
+    <script src="/vendor/cytoscape.min.js"></script>
+    <script src="/vendor/xlsx.full.min.js"></script>
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

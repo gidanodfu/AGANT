@@ -1,0 +1,55 @@
+[
+  {
+    "id": "574c75c36bf1",
+    "timestamp": "2026-09-26T18:15:07-0500",
+    "kind": "threshold_selection",
+    "dataset": "paysim",
+    "split": "validation",
+    "threshold": 0.5,
+    "feature_version": "online_v1",
+    "model_version": "rf_online_online_v1_20260926163520",
+    "metrics": {
+      "threshold": 0.5,
+      "precision": 0.9216738197424893,
+      "recall": 0.7279661016949153,
+      "f1": 0.8134469696969697
+    }
+  },
+  {
+    "id": "2380290ef5f6",
+    "timestamp": "2026-09-26T18:15:50-0500",
+    "kind": "audit_only",
+    "dataset": "paysim",
+    "split": "test",
+    "threshold": 0.5,
+    "feature_version": "audit_post_transaction",
+    "model_version": "rf_audit_only",
+    "metrics": {
+      "threshold": 0.5,
+      "precision": 0.9736328125,
+      "recall": 0.7963258785942492,
+      "f1": 0.8760984182776801,
+      "roc_auc": 0.9923543012704149,
+      "pr_auc": 0.9558534680353505,
+      "tn": 88187,
+      "fp": 27,
+      "fn": 255,
+      "tp": 997,
+      "rows": 89466,
+      "fraud": 1252
+    }
+  },
+  {
+    "id": "4cec477d8f4c",
+    "timestamp": "2026-09-26T18:16:22-0500",
+    "kind": "ablation",
+    "dataset": "paysim",
+    "split": "validation",
+    "threshold": 0.5,
+    "feature_version": "online_v1",
+    "model_version": "rf_ablation",
+    "metrics": {
+      "delta_f1": 0.011507792678506656
+    }
+  }
+]

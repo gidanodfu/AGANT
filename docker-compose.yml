@@ -1,0 +1,83 @@
+# Copyright (C) 2026 Josue David (gidanodfu)
+# https://github.com/gidanodfu/AGANT
+#
+# Topología: navegador -> frontend (nginx) -> backend -> (Laya opcional).
+# El servicio Laya se levanta con:  docker compose --profile gpu up
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      AGANT_ENV: docker
+      AGANT_LOG_LEVEL: INFO
+      AGANT_DATA_DIR: /srv/data
+      AGANT_RESULTS_DIR: /srv/results
+      AGANT_CORS_ORIGINS: http://localhost:8080,http://localhost:8000
+      AGANT_ALLOWED_WS_ORIGINS: http://localhost:8080,http://localhost:8000
+      # Laya in-process deshabilitado por defecto en el contenedor.
+      # Para usar el servicio GPU: AGANT_LAYA_ENABLED=1 y AGANT_LAYA_URL=http://laya:8001
+      AGANT_LAYA_ENABLED: "0"
+      AGANT_LAYA_MODE: disabled
+      AGANT_ADMIN_TOKEN: ${AGANT_ADMIN_TOKEN:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/srv/data
+      - ./results:/srv/results
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  laya:
+    profiles: ["gpu"]
+    build:
+      context: .
+      dockerfile: laya/Dockerfile.gpu
+    environment:
+      LAYA_MODEL_ID: convaiinnovations/laya
+      LAYA_SUBFOLDER: typed-decisions
+      LAYA_DEVICE: cuda
+      LAYA_FAST: "1"
+      HF_HOME: /cache/huggingface
+    ports:
+      - "8001:8001"
+    volumes:
+      - hf-cache:/cache/huggingface
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  hf-cache:

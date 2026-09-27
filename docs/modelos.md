@@ -1,0 +1,61 @@
+# AGANT — Modelos
+
+## Random Forest online (15 features)
+
+Modelo online de referencia: **RandomForestClassifier** con 9 features
+tabulares + 6 de grafo.
+
+- `n_estimators=20`, `max_depth=20`, `min_samples_leaf=2`,
+  `max_features=sqrt`, `class_weight=balanced_subsample`, `random_state=42`.
+- Carga única en startup (`MLDecisionProvider.load`); **no** se entrena en
+  una petición. En inferencia `n_jobs=1` (evita overhead por llamada).
+- Artefacto: `results/models/random_forest_online.joblib` (regenerable,
+  fuera de git). Métricas: `results/metrics/model_*.json`.
+
+### Métricas (TEST, umbral 0.5)
+
+| P | R | F1 | ROC-AUC | PR-AUC | TN | FP | FN | TP |
+|---|---|---|---|---|---|---|---|---|
+| 0.9567 | 0.7228 | 0.8235 | 0.9920 | 0.8545 | 88,173 | 41 | 347 | 905 |
+
+VALIDATION: P 0.9217 · R 0.7280 · F1 0.8134. Ambas reproducen el benchmark
+de referencia del proyecto (no son garantía de producción).
+
+### Features (`online_v1`)
+
+`step, amount, origin_old_balance, destination_old_balance, type_CASH_IN,
+type_CASH_OUT, type_DEBIT, type_PAYMENT, type_TRANSFER` +
+`origin_degree_before, destination_degree_before,
+origin_unique_destinations_before, destination_unique_origins_before,
+edge_count_before, edge_seen_before`.
+
+## Selección de umbral y ablación
+
+- **Umbral**: barrido sobre VALIDATION (`scripts/thresholds.py`) → mejor F1 en
+  **0.5** (`results/metrics/threshold_analysis.json`).
+- **Ablación** (`scripts/evaluate_variants.py`, RF de 15 árboles sobre 2M filas):
+  F1 sin grafo **0.7949** vs con grafo **0.8065** → las 6 features de grafo
+  aportan **+0.0115 F1** (`results/metrics/ablation.json`).
+- **Registro de experimentos**: `results/experiments/index.json` guarda
+  dataset/split/umbral/feature_version/model_version/métricas.
+
+## Variante audit_only
+
+Una variante con `newbalance*` (post-transacción) existe sólo como
+`audit_only` para auditoría/techo teórico; **nunca** se usa online.
+Medida (`results/models/random_forest_audit_only.json`): P 0.9736 · R 0.7963 ·
+F1 0.8761. Refuerza que la ruta online no puede usar esas features.
+
+## Laya (checkpoints)
+
+- Paquete `laya` 0.3.20 (Apache-2.0); checkpoints
+  `convaiinnovations/laya` (`typed-decisions`).
+- Los scores son **uncalibrated**: se tratan como etiqueta ordinal, no
+  como probabilidad de fraude.
+- Se descargan externamente (caché de Hugging Face); no se redistribuyen.
+
+## Entrenar / evaluar
+
+```bash
+.venv/bin/python scripts/train.py     # entrena y evalúa validation+test
+```

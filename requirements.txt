@@ -1,0 +1,38 @@
+# AGANT - dependencias directas (entorno validado: Python 3.12.14 + CUDA en RTX 4060).
+# Instalacion reproducible:  uv pip install -r requirements.txt
+
+# --- Datos / escala ---
+numpy==2.5.3
+pandas==3.0.6
+duckdb==1.5.5
+
+# --- ML ---
+scikit-learn==1.9.1
+joblib==1.6.0
+
+# --- API / tiempo real ---
+fastapi==0.141.1
+uvicorn==0.54.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+websockets==17.1
+python-multipart==0.0.32
+httpx==0.28.1
+
+# --- Observabilidad ---
+psutil==7.2.2
+
+# --- Laya (motor de decision, opcional) + Fast Path GPU ---
+# nvidia-cuda-nvcc aporta el toolkit CUDA que tilelang usa para compilar
+# los kernels del fast path; sin el, Laya cae al forward stock.
+torch==2.14.0
+transformers==5.17.0
+safetensors==0.8.0
+huggingface-hub==1.33.0
+laya==0.3.20
+tilelang==0.1.14
+nvidia-cuda-nvcc==13.4.92
+
+# --- Tests ---
+pytest==9.1.1
+pytest-asyncio==1.3.0
