@@ -77,6 +77,17 @@ tests y los artefactos en `results/`.
 - El objetivo "100k tps" es una **propiedad de arquitectura** (particionado,
   colas, réplicas), no un resultado medido de este repositorio.
 
+## Decisiones de diseño no implementadas (a propósito)
+
+- **Estado `REVIEW`:** el diseño usa `SUSPICIOUS` como bandeja de revisión
+  humana (Laya sólo se invoca ahí). Añadir un cuarto estado sin un flujo de
+  revisor real duplicaría `SUSPICIOUS` y ampliaría un contrato que nadie
+  consumiría. Se deja como extensión si surge el caso de uso.
+- **Calibración de Laya:** sus scores son *uncalibrated* y se tratan como
+  etiqueta ordinal; calibrarlos exigiría ejecuciones con GPU y un conjunto
+  etiquetado de salidas de Laya, con poco valor para una segunda opinión que
+  ya es discreta.
+
 ## Metodología del repositorio
 
 - La documentación puede quedar desactualizada; cuando difiere del código, la

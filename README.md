@@ -113,7 +113,7 @@ cd frontend && npm install && npm run build:css
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest        # 140 tests backend
+.venv/bin/python -m pytest        # 143 tests backend
 cd frontend && npm test           # 27 tests frontend (node:test)
 ```
 
