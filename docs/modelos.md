@@ -48,6 +48,21 @@ a gran escala.
 - **Registro de experimentos**: `results/experiments/index.json` guarda
   dataset/split/umbral/feature_version/model_version/métricas.
 
+## Baselines
+
+`scripts/baselines.py` compara contra reglas solas y un
+`HistGradientBoostingClassifier` (200 iteraciones, pesos balanceados, umbral
+elegido en VALIDATION) con las mismas 15 features (`results/metrics/baselines.json`):
+
+| Modelo | TEST F1 | TEST PR-AUC |
+|---|---|---|
+| Reglas solas (positivo = FRAUD) | 0.011 | 0.020 |
+| HistGradientBoosting @0.989 | **0.846** | **0.943** |
+| RF online servido (`online_v2`) | 0.812 | 0.843 |
+
+El GBM **supera** al RF servido; las reglas solas son casi inútiles. El RF
+está poco ajustado y es una línea de mejora abierta.
+
 ## Variante audit_only
 
 Una variante con `newbalance*` (post-transacción) existe sólo como

@@ -16,6 +16,7 @@ train:
 	.venv/bin/python scripts/train.py
 	.venv/bin/python scripts/thresholds.py
 	.venv/bin/python scripts/evaluate_variants.py
+	.venv/bin/python scripts/baselines.py
 
 test-py:
 	.venv/bin/python -m pytest

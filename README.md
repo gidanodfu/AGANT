@@ -51,11 +51,14 @@ cp .env.example .env             # ajustar según necesidad
 .venv/bin/python scripts/train.py               # entrena RF online + evalúa
 .venv/bin/python scripts/thresholds.py          # selección de umbral (VALIDATION)
 .venv/bin/python scripts/evaluate_variants.py   # audit_only + ablación (± grafo)
+.venv/bin/python scripts/baselines.py           # baselines (reglas solas, GBM)
 ```
 
 Variantes: `audit_only` (post-transacción, F1 0.8761, no online) y ablación
 con features de grafo **acotadas igual que online** (la variante con grafo no
-mejora F1: −0.0117). **Modo por lotes**: `batch_size` 32/64 con ML
+mejora F1: −0.0117). Baselines: las reglas solas son casi inútiles (F1 0.011)
+y un `HistGradientBoosting` supera al RF servido (F1 0.846 vs 0.812).
+**Modo por lotes**: `batch_size` 32/64 con ML
 vectorizado → ~3,400 tx/s vs ~344 tx/s per-item (mismas decisiones). Ver
 `docs/rendimiento.md`.
 

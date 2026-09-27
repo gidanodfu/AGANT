@@ -60,6 +60,27 @@ Umbral óptimo en VALIDATION (`online_v2`): **0.55** (el artefacto conserva 0.5)
 
 Bajo paridad, las features de grafo **no mejoran** el F1 en la ablación.
 
+## Baselines (TEST, features `online_v2`)
+
+`scripts/baselines.py` → `results/metrics/baselines.json`.
+
+| Modelo | P | R | F1 | PR-AUC |
+|---|---|---|---|---|
+| Reglas solas (positivo = FRAUD) | 1.000 | 0.006 | 0.011 | 0.020 |
+| Reglas solas (positivo = FRAUD o SUSPICIOUS) | 0.031 | 0.994 | 0.061 | 0.031 |
+| HistGradientBoosting @0.5 | 0.287 | 0.998 | 0.446 | 0.943 |
+| HistGradientBoosting @0.989 (elegido en VALIDATION) | 0.840 | 0.853 | **0.846** | **0.943** |
+| RF online servido (`online_v2`) | 0.929 | 0.721 | 0.812 | 0.843 |
+
+Lectura honesta:
+
+- Las **reglas deterministas solas son casi inútiles** (F1 ≈ 0.01 con
+  positivo=FRAUD; al relajar a SOSPECHOSAS marcan casi todo).
+- Un **GBM estándar supera al RF servido** en F1 y PR-AUC con las mismas 15
+  features y el mismo split temporal. El RF (20 árboles) está poco ajustado.
+- El umbral 0.5 del GBM no es comparable por los pesos balanceados; se
+  selecciona en VALIDATION (0.989), como se hace con el RF.
+
 ## Benchmark e2e
 
 `results/benchmarks/e2e_latest.json` (3,000 tx, batch 32, ruta per-item):
