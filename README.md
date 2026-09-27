@@ -53,6 +53,7 @@ cp .env.example .env             # ajustar según necesidad
 .venv/bin/python scripts/thresholds.py          # selección de umbral (VALIDATION)
 .venv/bin/python scripts/evaluate_variants.py   # audit_only + ablación (± grafo)
 .venv/bin/python scripts/baselines.py           # baselines (reglas solas, GBM)
+.venv/bin/python scripts/confidence_intervals.py # intervalos de confianza (bootstrap)
 ```
 
 Modelo servido: **HistGradientBoosting** (`AGANT_MODEL_KIND=gbm`), elegido por
@@ -112,7 +113,7 @@ cd frontend && npm install && npm run build:css
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest        # 138 tests backend
+.venv/bin/python -m pytest        # 140 tests backend
 cd frontend && npm test           # 27 tests frontend (node:test)
 ```
 

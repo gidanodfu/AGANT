@@ -22,6 +22,19 @@ Modelo servido: **HistGradientBoostingClassifier** con 9 features tabulares +
 
 VALIDATION: P 0.7487 · R 0.8661 · F1 0.8031. No son garantía de producción.
 
+### Intervalos de confianza (TEST, bootstrap n=1000)
+
+`scripts/confidence_intervals.py` → `results/metrics/confidence_intervals.json`
+(remuestreo con reemplazo; percentiles 2.5–97.5):
+
+| Métrica | Punto | IC 95 % |
+|---|---|---|
+| precision | 0.8396 | [0.8178, 0.8607] |
+| recall | 0.8530 | [0.8333, 0.8724] |
+| F1 | 0.8463 | [0.8304, 0.8609] |
+| ROC-AUC | 0.9988 | [0.9986, 0.9990] |
+| PR-AUC | 0.9432 | [0.9341, 0.9512] |
+
 ### Features (`online_v2`)
 
 `step, amount, origin_old_balance, destination_old_balance, type_CASH_IN,

@@ -41,6 +41,7 @@ _CONFIG_FILES = (
     ".github/workflows/ci.yml",
     "docker-compose.yml",
     "pyproject.toml",
+    "Makefile",
     "frontend/index.html",
     "frontend/styles/input.css",
     "laya/service/app.py",

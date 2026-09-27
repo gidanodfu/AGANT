@@ -13,7 +13,7 @@ estabilización. Sirve de referencia para comparar futuros cambios.
 
 | Suite | Inicio | Actual |
 |---|---|---|
-| Backend (pytest) | 116 | **138** |
+| Backend (pytest) | 116 | **140** |
 | Frontend (node:test) | 27 | 29 |
 
 ## Métricas del modelo (15 features `online_v2`)
@@ -33,6 +33,12 @@ latencia per-item. Gana el GBM (F1 0.846 vs 0.811; PR-AUC 0.943 vs 0.843;
 p95 2.86 vs 2.56 ms → ratio 1.12, dentro del margen de 1.5).
 
 `audit_only` (post-transacción, no online): F1 0.8761 (sin cambios).
+
+### Intervalos de confianza (TEST, bootstrap n=1000)
+
+`scripts/confidence_intervals.py` (modelo servido): F1 0.8463 [0.8304, 0.8609],
+PR-AUC 0.9432 [0.9341, 0.9512], recall 0.8530 [0.8333, 0.8724]. Detalle en
+`docs/modelos.md`.
 
 ## Cambio de features (`online_v1` → `online_v2`)
 
