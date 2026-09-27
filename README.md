@@ -106,7 +106,7 @@ cd frontend && npm install && npm run build:css
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest        # 116 tests backend
+.venv/bin/python -m pytest        # 129 tests backend
 cd frontend && npm test           # 27 tests frontend (node:test)
 ```
 
@@ -124,6 +124,18 @@ constructor de payload (nunca incluye `isFraud`), validación y formateo.
 
 Resultado medido (3,000 tx, batch 32): **total p50 1.65 ms · p95 2.28 ms ·
 p99 2.86 ms**, ML p50 1.56 ms. Detalle en `docs/rendimiento.md`.
+
+## Diagnóstico de paridad de grafo
+
+```bash
+.venv/bin/python scripts/diagnose_graph_parity.py --max-records 500000
+```
+
+Compara las features de grafo online (`GraphState` con caps LRU) contra los
+memmaps offline y reporta divergencia y cardinalidad real. En PaySim completo
+los caps (2M/2M) son menores que las cuentas/aristas reales
+(6.35M/2.72M/6.36M), por lo que la paridad se rompe a gran escala. Ver
+`docs/baseline.md`.
 
 ## Docker
 
@@ -145,3 +157,4 @@ docker compose --profile gpu up        # + servicio Laya aislado
 | 6 | Replay, drift, métricas separadas | ✅ |
 | 7 | Tests, benchmarks, Docker, docs | ✅ |
 | 8 | Flujo interactivo (`/nueva-transaccion`, Live/Replay) | ✅ |
+| 9 | Estabilización: red de seguridad, fixes aditivos, licencia canónica | ✅ |
