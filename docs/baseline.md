@@ -13,7 +13,7 @@ estabilización. Sirve de referencia para comparar futuros cambios.
 
 | Suite | Inicio | Actual |
 |---|---|---|
-| Backend (pytest) | 116 | **143** |
+| Backend (pytest) | 116 | **144** |
 | Frontend (node:test) | 27 | 29 |
 
 ## Métricas del modelo (15 features `online_v2`)

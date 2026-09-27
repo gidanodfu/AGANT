@@ -49,6 +49,13 @@ DESCRIPTIONS = {
 _DATASET_ID = re.compile(r"^R(\d+)$")
 
 
+def _is_risky(item: dict, fraud_keys: set[tuple[str, str]]) -> bool:
+    """Riesgo = señal del protocolo (``isFlaggedFraud``) o decisión final FRAUD."""
+    if bool(item.get("is_flagged_fraud")):
+        return True
+    return (str(item.get("source")), str(item.get("transaction_id"))) in fraud_keys
+
+
 def _touch(nodes: dict, edges: dict, origin: str, destination: str, risky: bool) -> None:
     for account, role in ((origin, "ORIGIN"), (destination, "DESTINATION")):
         node = nodes.setdefault(account, {"id": account, "roles": set(), "degree": 0, "risk": False})
@@ -91,17 +98,19 @@ async def graph(
 ) -> ApiResponse[dict]:
     state = get_state(request)
     transactions = state.store.recent_transactions(limit)
+    fraud_keys = state.store.fraud_keys()
     nodes: dict[str, dict] = {}
     edges: dict[tuple[str, str], dict] = {}
     for tx in transactions:
         origin = str(tx.get("name_orig"))
         destination = str(tx.get("name_dest"))
-        _touch(nodes, edges, origin, destination, bool(tx.get("is_flagged_fraud")))
+        _touch(nodes, edges, origin, destination, _is_risky(tx, fraud_keys))
     data = {
         **_finalize(nodes, edges),
         "categories": CATEGORIES,
         "bounded": True,
-        "note": "Vista acotada a las últimas transacciones; no es el grafo completo.",
+        "note": "Vista acotada a las últimas transacciones; no es el grafo completo. "
+        "RISK = decisión FRAUD o isFlaggedFraud.",
     }
     return ApiResponse.ok(data, request_id=getattr(request.state, "request_id", "-"))
 
@@ -154,7 +163,8 @@ def _dataset_graph(settings, row_id: int, limit: int) -> dict | None:
         "context": _context_map(context_values) if context_values else None,
         "graph": _finalize(nodes, edges, center={"origin": origin, "destination": destination}),
         "dataset_fraud": int(row[8]),
-        "note": "Subgrafo del dataset completo (por cuenta), acotado por LIMIT.",
+        "note": "Subgrafo del dataset completo (por cuenta), acotado por LIMIT. "
+        "RISK = isFlaggedFraud (el dataset no tiene decisiones del modelo).",
     }
 
 
@@ -165,6 +175,7 @@ def _store_graph(state, transaction_id: str, limit: int) -> dict | None:
     transaction = decision.get("transaction") or {"transaction_id": transaction_id}
     origin = transaction.get("name_orig")
     destination = transaction.get("name_dest")
+    fraud_keys = state.store.fraud_keys()
     nodes: dict[str, dict] = {}
     edges: dict[tuple[str, str], dict] = {}
     for account in (origin, destination):
@@ -174,10 +185,10 @@ def _store_graph(state, transaction_id: str, limit: int) -> dict | None:
                 edges,
                 str(item.get("name_orig")),
                 str(item.get("name_dest")),
-                bool(item.get("is_flagged_fraud")),
+                _is_risky(item, fraud_keys),
             )
     if origin and destination:
-        _touch(nodes, edges, str(origin), str(destination), bool(transaction.get("is_flagged_fraud")))
+        _touch(nodes, edges, str(origin), str(destination), _is_risky(transaction, fraud_keys))
 
     evidence = (decision.get("state") or {}).get("evidence") or {}
     context_values = (evidence.get("graph") or {}).get("context") or None
@@ -192,7 +203,8 @@ def _store_graph(state, transaction_id: str, limit: int) -> dict | None:
         },
         "context": _context_map(context_values) if context_values else None,
         "graph": _finalize(nodes, edges, center={"origin": origin, "destination": destination}),
-        "note": "Subgrafo de la ventana reciente en memoria (tráfico live).",
+        "note": "Subgrafo de la ventana reciente en memoria (tráfico live). "
+        "RISK = decisión FRAUD o isFlaggedFraud.",
     }
 
 

@@ -88,3 +88,29 @@ def test_unknown_transaction_returns_404(tmp_path):
         response = client.get("/api/v1/transactions/NOEXISTE/graph")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def _payload(tx_id: str, origin: str, dest: str, flagged: bool) -> dict:
+    return {
+        "transaction_id": tx_id,
+        "step": 700,
+        "type": "TRANSFER",
+        "amount": 100.0,
+        "name_orig": origin,
+        "old_balance_org": 100.0,
+        "name_dest": dest,
+        "old_balance_dest": 0.0,
+        "is_flagged_fraud": flagged,
+    }
+
+
+def test_global_graph_marks_fraud_decision_as_risk(tmp_path):
+    app = create_app(_settings(tmp_path))
+    with TestClient(app) as client:
+        client.post("/api/v1/decision", json=_payload("T1", "C1", "M1", flagged=True))
+        client.post("/api/v1/decision", json=_payload("T2", "C2", "M2", flagged=False))
+        data = client.get("/api/v1/graph").json()["data"]
+    by_id = {node["id"]: node for node in data["nodes"]}
+    assert by_id["C1"]["risk"] is True
+    assert "RISK" in by_id["C1"]["tags"]
+    assert by_id["C2"]["risk"] is False

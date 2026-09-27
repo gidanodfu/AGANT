@@ -15,7 +15,12 @@ cuentas y aristas observadas y esas features.
 | `DESTINATION` | Sólo como cuenta destino |
 | `EDGE` | Arista (origen→destino) |
 | `HISTORY` | Nodo con grado > 1 (repetición) |
-| `RISK` | Involucrado en transacción marcada por el protocolo |
+| `RISK` | Nodo de una transacción con **decisión final `FRAUD`** o `isFlaggedFraud` (en el subgrafo del dataset, sólo `isFlaggedFraud`) |
+
+`RISK` es un **tag/booleano** (colorea el nodo en rojo), no una categoría base:
+la categoría sigue siendo `ACCOUNT`/`ORIGIN`/`DESTINATION`. En tráfico live el
+criterio es la decisión del sistema, por lo que los fraudes detectados se
+resaltan aunque `isFlaggedFraud` (16 filas de 6.36M en PaySim) no lo haga.
 
 ## Vistas
 

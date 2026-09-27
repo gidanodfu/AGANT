@@ -166,7 +166,10 @@ export function clearHighlight(cy) {
 export function filterGraph(cy, { categories = null, minDegree = 0 } = {}) {
   if (!cy) return;
   cy.nodes().forEach((node) => {
-    const okCategory = !categories || categories.has(node.data("category"));
+    const category = node.data("category");
+    const risk = Boolean(node.data("risk"));
+    const okCategory =
+      !categories || categories.has(category) || (risk && categories.has("RISK"));
     const okDegree = (node.data("degree") || 0) >= minDegree;
     node.toggleClass("hidden-el", !(okCategory && okDegree));
   });

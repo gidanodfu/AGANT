@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 
 from ..config import Settings
 from ..contracts.decision import DecisionResult
-from ..contracts.enums import Source
+from ..contracts.enums import Decision, Source
 from ..decision.engine import DecisionEngine
 from ..errors import ErrorManager
 from ..events import EventBus
@@ -82,6 +82,18 @@ class Store:
 
     def recent_laya_decisions(self, limit: int) -> list[dict]:
         return [self._decision_dict(entry) for entry in list(self.laya_decisions)[-limit:]]
+
+    def fraud_keys(self) -> set[tuple[str, str]]:
+        """Claves ``(source, transaction_id)`` con decisión final ``FRAUD``.
+
+        Permite que la vista de grafo marque como riesgo lo que el sistema
+        decidió como fraude, no sólo la señal ``isFlaggedFraud``.
+        """
+        return {
+            (entry["source"], entry["result"].transaction_id)
+            for entry in self.decisions
+            if entry["result"].final_decision is Decision.FRAUD
+        }
 
     def find_decision(self, transaction_id: str, source: str | None = None) -> dict | None:
         for entry in reversed(self.decisions):
