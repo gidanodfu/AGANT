@@ -21,8 +21,16 @@
 from __future__ import annotations
 
 from app.config import Settings
-from app.contracts import ComponentStatus
+from app.contracts import (
+    ComponentStatus,
+    Decision,
+    Evidence,
+    FallbackLevel,
+    GraphAvailability,
+    MLResult,
+)
 from app.contracts.transaction import Transaction
+from app.decision import FallbackPolicy
 from app.evidence.graph_provider import GraphContextProvider
 
 
@@ -53,3 +61,22 @@ def test_provide_context_is_causal(settings: Settings):
     next_step = provider.provide(_tx("T3", 2, "C1", "M1"))
     assert next_step.context.origin_degree_before == 2
     assert next_step.context.destination_degree_before == 1
+
+
+def test_graph_failure_is_reported_unavailable(settings: Settings, monkeypatch):
+    provider = GraphContextProvider(settings)
+
+    def boom(_step: int) -> None:
+        raise RuntimeError("grafo caído")
+
+    monkeypatch.setattr(provider.state, "advance", boom)
+    availability = provider.provide(_tx("T1", 1))
+    assert availability.status is ComponentStatus.UNAVAILABLE
+
+
+def test_fallback_level_is_ml_only_when_graph_unavailable():
+    evidence = Evidence(
+        graph=GraphAvailability(status=ComponentStatus.UNAVAILABLE),
+        ml=MLResult(available=True, score=0.9, decision=Decision.LEGITIMATE),
+    )
+    assert FallbackPolicy().level(evidence)[0] is FallbackLevel.ML_ONLY

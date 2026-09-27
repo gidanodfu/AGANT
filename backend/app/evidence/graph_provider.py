@@ -20,11 +20,15 @@
 
 from __future__ import annotations
 
+import logging
+
 from ..config import Settings
 from ..contracts.enums import ComponentStatus
 from ..contracts.evidence import GraphAvailability
 from ..contracts.transaction import Transaction
 from ..features.graph_state import GraphState
+
+logger = logging.getLogger("agant.graph")
 
 
 class GraphContextProvider:
@@ -33,9 +37,15 @@ class GraphContextProvider:
         self._status = ComponentStatus.READY
 
     def provide(self, transaction: Transaction) -> GraphAvailability:
-        self.state.advance(transaction.step)
-        context = self.state.context(transaction.name_orig, transaction.name_dest)
-        self.state.observe(transaction.name_orig, transaction.name_dest, transaction.step)
+        try:
+            self.state.advance(transaction.step)
+            context = self.state.context(transaction.name_orig, transaction.name_dest)
+            self.state.observe(transaction.name_orig, transaction.name_dest, transaction.step)
+        except Exception as exc:  # noqa: BLE001 - degrada el nivel, no silencia
+            self._status = ComponentStatus.UNAVAILABLE
+            logger.error("contexto de grafo no disponible: %s", exc)
+            return GraphAvailability(status=self._status)
+        self._status = ComponentStatus.READY
         return GraphAvailability(status=self._status, context=context)
 
     def reset(self) -> None:
