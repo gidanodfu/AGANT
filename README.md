@@ -98,7 +98,8 @@ o manualmente:
   probar el motor. Modo de decisión `hybrid | laya_all` (Laya decide todo).
 - UI extra: tema claro/oscuro, `Ctrl+K`, sparklines, toasts, pausa/reanudar
   feed, filtros persistentes, grafo interactivo y export XLSX.
-- API: `docs/api.md` · WebSocket/SSE: `docs/websocket.md`.
+- API: `docs/api.md` · WebSocket/SSE: `docs/websocket.md` · Pruebas de clase:
+  `docs/pruebas-clase.md` (+ `docs/ejemplos/transacciones-clase.csv`).
 
 ## Frontend
 
