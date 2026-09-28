@@ -91,8 +91,9 @@ o manualmente:
 - Desde `/nueva-transaccion` puedes **crear y enviar** transacciones reales
   y **iniciar/detener un flujo** Live (sintético) o PaySim Replay, viendo el
   resultado inmediato y el avance en vivo. Ver `docs/flujo-interactivo.md`.
-- **Importar/Exportar**: junto a *Exportar XLSX* hay *Importar* (procesa las
-  transacciones del archivo de verdad). Ver `docs/import.md`.
+- **Exportar XLSX** en las tablas (`/home`, `/transacciones`, `/decisiones`).
+  La importación de transacciones desde archivo se realiza por API
+  (`POST /api/v1/transactions/import`). Ver `docs/import.md`.
 - **`/laya`**: panel visual para configurar/cargar checkpoints, ver VRAM y
   probar el motor. Modo de decisión `hybrid | laya_all` (Laya decide todo).
 - UI extra: tema claro/oscuro, `Ctrl+K`, sparklines, toasts, pausa/reanudar
@@ -114,13 +115,14 @@ cd frontend && npm install && npm run build:css
 
 ```bash
 .venv/bin/python -m pytest        # 144 tests backend
-cd frontend && npm test           # 27 tests frontend (node:test)
+cd frontend && npm test           # 26 tests frontend (node:test)
 ```
 
 Cubren reglas, features, grafo (paridad offline/online), ML, decisión,
 Laya, fallback, errores, API, admin, WebSocket, replay, flujo interactivo,
 métricas, drift, concurrencia, licencia y estructura; el frontend cubre el
-constructor de payload (nunca incluye `isFraud`), validación y formateo.
+constructor de payload (nunca incluye `isFraud`), el store, la consola de flujo
+y el formateo.
 
 ## Benchmarks y replay
 

@@ -350,8 +350,6 @@ export function errorsList(errors) {
 export function dataToolbar(prefix) {
   return `<span class="flex items-center gap-2">
     <button id="${prefix}-export" class="btn text-xs"><i data-lucide="download" class="w-3.5 h-3.5"></i>Exportar XLSX</button>
-    <button id="${prefix}-import" class="btn text-xs"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Importar</button>
-    <input id="${prefix}-import-file" type="file" accept=".xlsx,.csv,text/csv" class="hidden" />
   </span>`;
 }
 

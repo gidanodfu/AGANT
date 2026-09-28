@@ -59,7 +59,6 @@ import { createHistory, sparkline } from "./charts.js";
 import { initTheme, toggleTheme } from "./theme.js";
 import { setupPalette } from "./palette.js";
 import { decisionToRow, exportRows } from "./export.js";
-import { parseFile, rowsToTransactions } from "./import.js";
 import { toast } from "./toast.js";
 
 const throughputHistory = createHistory(60);
@@ -176,55 +175,6 @@ function wireFilters(prefix, onChange) {
       onChange();
     });
   }
-}
-
-function wireImport(prefix) {
-  const button = document.getElementById(`${prefix}-import`);
-  const input = document.getElementById(`${prefix}-import-file`);
-  if (!button || !input) return;
-  button.addEventListener("click", () => input.click());
-  input.addEventListener("change", async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    try {
-      const rows = await parseFile(file);
-      const { transactions, errors } = rowsToTransactions(rows);
-      if (errors.length) {
-        toast({
-          severity: "warning",
-          title: `${errors.length} fila(s) con error`,
-          message: errors.slice(0, 3).map((e) => `#${e.row}: ${e.error}`).join(" · "),
-        });
-      }
-      if (!transactions.length) {
-        reportError({
-          key: "import",
-          severity: "warning",
-          title: "Sin filas válidas",
-          message: "El archivo no contiene transacciones válidas.",
-        });
-        return;
-      }
-      const started = await apiPost("/api/v1/transactions/import", {
-        transactions,
-        batch_size: 32,
-      });
-      toast({
-        severity: "success",
-        title: `Import iniciado: ${transactions.length} transacciones`,
-        message: started.kind === "import" ? "Procesando en segundo plano" : "",
-      });
-    } catch (error) {
-      reportError({
-        key: "import",
-        severity: "recoverable",
-        title: "No fue posible importar",
-        message: error.message,
-      });
-    } finally {
-      input.value = "";
-    }
-  });
 }
 
 function emptyRow(colspan, text) {
@@ -817,7 +767,6 @@ function route() {
         : emptyRow(6, "Sin transacciones que coincidan.");
     };
     wireFilters("tx", render);
-    wireImport("tx");
     render();
     document.getElementById("tx-export")?.addEventListener("click", () => {
       const filters = readFilters("tx", true);
@@ -855,7 +804,6 @@ function route() {
         : emptyRow(8, "Sin decisiones de Laya que coincidan.");
     };
     wireFilters("dec", render);
-    wireImport("dec");
     render();
     renderLayaStats();
     renderConfidence();
@@ -896,7 +844,6 @@ function route() {
       if (window.lucide) window.lucide.createIcons();
     };
     wireFilters("act", renderActivity);
-    wireImport("act");
     renderActivity();
     document.getElementById("act-export")?.addEventListener("click", () => {
       const filters = readFilters("act", true);
